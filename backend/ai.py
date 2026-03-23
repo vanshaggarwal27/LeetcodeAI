@@ -28,7 +28,7 @@ Solution Code:
 {problem.code}
 
 Strictly follow this structure:
-1. Title (Use an engaging title)
+1. Title (Use an engaging # Title instead of YAML)
 2. Problem Explanation (explain it simply, as if to a beginner)
 3. Intuition (the "aha!" moment)
 4. Approach (step-by-step logic)
@@ -37,9 +37,20 @@ Strictly follow this structure:
 7. Key Takeaways
 8. Submission Details (MUST include the Author Account [{problem.author}] and the Time Published [{current_time}] in a concluding footnote)
 
-Make the content Markdown-formatted. Do not include extra conversational text outside the blog content itself. The output should be ready to be published.
+CRITICAL INSTRUCTIONS:
+- DO NOT wrap the output in ```markdown or ``` tags. Return raw markdown text.
+- DO NOT output YAML frontmatter (no --- blocks).
 """
     response = model.generate_content(prompt)
     if not response.text:
          raise Exception("Received empty response from Gemini API.")
-    return response.text
+         
+    text = response.text.strip()
+    if text.startswith("```markdown"):
+        text = text[11:]
+    elif text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+        
+    return text.strip()

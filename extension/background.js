@@ -3,7 +3,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const { title, description, code, author } = request.payload;
 
         // 🚀 Swap this to your live Render URL once deployed!
-        const API_URL = "http://localhost:10000/generate-blog";
+        const API_URL = "https://leetcodeai-backend.onrender.com/generate-blog";
 
         fetch(API_URL, {
             method: "POST",
