@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>LeetLog AI</title>
+    <style>
+        body { width: 300px; padding: 15px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; text-align: center; }
+        button { background-color: #f7a01a; color: white; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer; border-radius: 5px; width: 100%; margin-top: 10px; font-weight: bold; }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; }
+        #status { margin-top: 15px; font-weight: bold; font-size: 14px; color: #333; }
+    </style>
+</head>
+<body>
+    <h2>LeetLog AI</h2>
+    <p>Generate a Medium blog for the current LeetCode problem.</p>
+    <button id="generateBtn">Generate Blog</button>
+    <div id="status">Idle</div>
+    <script src="popup.js"></script>
+</body>
+</html>

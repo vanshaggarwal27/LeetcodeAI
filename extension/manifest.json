@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "LeetLog AI",
+  "version": "1.0",
+  "description": "Auto-generate Medium blogs from LeetCode using Gemini",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["https://leetcode.com/*", "http://localhost:10000/*", "https://*.onrender.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
