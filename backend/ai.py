@@ -40,6 +40,14 @@ Strictly follow this structure:
 CRITICAL INSTRUCTIONS:
 - DO NOT wrap the output in ```markdown or ``` tags. Return raw markdown text.
 - DO NOT output YAML frontmatter (no --- blocks).
+- TABLE FORMATTING (STRICT RULES):
+  - If you use a Markdown table, it MUST be perfectly formatted to render correctly.
+  - Each row (header, separator, or data) MUST start with `|` and end with `|`.
+  - A table row MUST be on exactly ONE single line. DO NOT use line breaks inside rows.
+  - The header row, separator row (e.g., `|---|---|`), and all data rows MUST have the EXACT same number of columns.
+  - CELL CONTENT: If a cell contains a bitwise OR operator `|` or any pipe character, you MUST escape it as `\|` (e.g., `(a \| b)`). Failing to escape pipes inside cells will break the table structure.
+  - Ensure the separator line is continuous (no line breaks) and uses at least 3 dashes per column.
+  - Always provide an EMPTY LINE before and after the table to ensure correct rendering.
 """
     response = model.generate_content(prompt)
     if not response.text:
