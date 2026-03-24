@@ -23,6 +23,7 @@ class Problem(BaseModel):
     description: str
     code: str
     author: str = "Anonymous Developer"
+    client_time: str = None  # Optional client time string
 
 @app.post("/generate-blog")
 def create_blog(problem: Problem):

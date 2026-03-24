@@ -10,7 +10,8 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 model = genai.GenerativeModel("gemini-2.5-flash")
 
 def generate_blog(problem):
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # Use client provided time if available, else fall back to backend local time (UTC on server)
+    current_time = problem.client_time if hasattr(problem, 'client_time') and problem.client_time else datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     prompt = f"""
 You are a professional technical writer and competitive programmer.

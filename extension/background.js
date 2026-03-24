@@ -1,16 +1,19 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'GENERATE_BLOG') {
-        const { title, description, code, author } = request.payload;
+        const { title, description, code, author, client_time } = request.payload;
 
-        // 🚀 Swap this to your live Render URL once deployed!
+        // 🚀 API URL - Make sure this matches your deployed Render URL!
+        // If testing locally, use "http://localhost:10000/generate-blog"
         const API_URL = "https://leetcodeai-backend.onrender.com/generate-blog";
+
+        console.log("LeetLog AI: Sending request to", API_URL);
 
         fetch(API_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ title, description, code, author })
+            body: JSON.stringify({ title, description, code, author, client_time })
         })
             .then(response => response.json())
             .then(data => {

@@ -1,4 +1,4 @@
-(function() {
+(function () {
     if (window.hasLeetLogInitialized) return;
     window.hasLeetLogInitialized = true;
 
@@ -16,10 +16,14 @@
             chrome.runtime.sendMessage({ type: 'STATUS_UPDATE', message: 'Generating blog...', status: 'loading' });
 
             // Data Extraction
-            const titleElement = document.querySelector('div[data-cy="question-title"]') || document.querySelector('.text-title-large');
+            const titleElement = document.querySelector('div[data-cy="question-title"]') ||
+                document.querySelector('.text-title-large') ||
+                document.querySelector('div.h-full.flex-col > div > div > span');
             const title = titleElement ? titleElement.innerText : "Unknown Problem";
 
-            const descriptionElement = document.querySelector('.elfjS') || document.querySelector('[data-track-load="description_content"]');
+            const descriptionElement = document.querySelector('.elfjS') ||
+                document.querySelector('[data-track-load="description_content"]') ||
+                document.querySelector('div[class*="question-content"]');
             const description = descriptionElement ? descriptionElement.innerText : "No description found.";
 
             let code = "";
@@ -27,9 +31,16 @@
             if (viewLines) {
                 code = Array.from(viewLines.children).map(line => line.innerText).join('\n');
             } else {
-                // Fallback for different LeetCode versions
-                const codeElement = document.querySelector('textarea.monaco-mouse-cursor-text');
-                code = codeElement ? codeElement.value : document.querySelector('.view-lines')?.innerText || "No code found.";
+                // Try to get from monaco editor or a regular textarea
+                const monaco = document.querySelector('.monaco-editor');
+                if (monaco) {
+                    // This is a bit of a hack but often works for extracting text from the editor view
+                    code = Array.from(monaco.querySelectorAll('.view-line')).map(l => l.innerText).join('\n');
+                }
+                if (!code || code.trim().length < 5) {
+                    const textarea = document.querySelector('textarea.monaco-mouse-cursor-text') || document.querySelector('textarea');
+                    code = textarea ? textarea.value : "No code found.";
+                }
             }
 
             // Extract the user's LeetCode Username
@@ -40,14 +51,19 @@
                 if (u) { author = u.replace('/', ''); break; }
             }
 
-            if (!title || !description || !code) {
-                throw new Error("Could not extract problem details.");
+            if (!title || title === "Unknown Problem" || !code || code === "No code found.") {
+                throw new Error("Could not extract problem details. Please ensure the problem is fully loaded.");
             }
+
+            // Get current local time for formatting (YYYY-MM-DD HH:MM:SS)
+            const now = new Date();
+            const offset = now.getTimezoneOffset() * 60000;
+            const client_time = new Date(now - offset).toISOString().slice(0, 19).replace('T', ' ');
 
             // Send to background script
             chrome.runtime.sendMessage({
                 type: 'GENERATE_BLOG',
-                payload: { title, description, code, author }
+                payload: { title, description, code, author, client_time }
             });
 
             setTimeout(() => { isProcessing = false; }, 5000);

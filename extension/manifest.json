@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "LeetLog AI",
-  "version": "1.0",
-  "description": "Auto-generate Medium blogs from LeetCode using Gemini",
+  "name": "LeetLog AI (Dev.to)",
+  "version": "1.0.1",
+  "description": "Auto-generate Dev.to blogs from LeetCode using Gemini",
   "permissions": [
     "activeTab",
     "scripting",
