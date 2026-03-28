@@ -1,0 +1,17 @@
+# Backend
+__pycache__/
+*.pyc
+.env
+venv/
+.venv/
+
+# Extension
+node_modules/
+*.log
+.DS_Store
+
+# Temporary / Testing files
+/tmp/
+backend/test_*.py
+backend/trigger_test_call.py
+!backend/test_devto.py
