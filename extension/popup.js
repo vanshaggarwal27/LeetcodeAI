@@ -1,5 +1,18 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const statusEl = document.getElementById('status');
+    const keyInput = document.getElementById('geminiKey');
+    
+    // Load existing key
+    const data = await chrome.storage.local.get(['geminiKey']);
+    if (data.geminiKey) {
+        keyInput.value = data.geminiKey;
+    }
+
+    // Save key on change
+    keyInput.addEventListener('input', () => {
+        chrome.storage.local.set({ geminiKey: keyInput.value });
+    });
+
     statusEl.innerText = "Dev.to Automation Active 🚀";
 });
 
@@ -19,9 +32,14 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
             return;
         }
 
+        const geminiKey = document.getElementById('geminiKey').value;
+        
         // Try simple message first (for already running scripts)
         try {
-            await chrome.tabs.sendMessage(tab.id, { type: 'MANUAL_TRIGGER' });
+            await chrome.tabs.sendMessage(tab.id, { 
+                type: 'MANUAL_TRIGGER', 
+                geminiKey: geminiKey 
+            });
         } catch (msgErr) {
             // Fallback: Re-inject the script if it's not currently running (e.g. after extension update)
             console.log("Re-injecting content script...");
@@ -31,7 +49,10 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
             });
             // Now try sending the message again
             setTimeout(() => {
-                chrome.tabs.sendMessage(tab.id, { type: 'MANUAL_TRIGGER' });
+                chrome.tabs.sendMessage(tab.id, { 
+                    type: 'MANUAL_TRIGGER',
+                    geminiKey: geminiKey
+                });
             }, 500);
         }
         

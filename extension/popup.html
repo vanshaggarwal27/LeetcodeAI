@@ -13,6 +13,12 @@
 <body>
     <h2>LeetLog AI</h2>
     <p>Generate a Dev.to blog for the current LeetCode problem.</p>
+    
+    <div style="margin-bottom: 15px; text-align: left;">
+        <label for="geminiKey" style="font-size: 11px; color: #666; display: block; margin-bottom: 2px;">Gemini API Key (Optional)</label>
+        <input type="password" id="geminiKey" placeholder="Paste your key to avoid limits" style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;">
+    </div>
+
     <button id="generateBtn">Generate Blog</button>
     <div id="status">Idle</div>
     <script src="popup.js"></script>

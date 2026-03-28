@@ -24,6 +24,7 @@ class Problem(BaseModel):
     code: str
     author: str = "Anonymous Developer"
     client_time: str = None  # Optional client time string
+    geminiKey: str = None    # Optional user provided API key
 
 @app.post("/generate-blog")
 def create_blog(problem: Problem):
@@ -31,7 +32,7 @@ def create_blog(problem: Problem):
         return {"status": "error", "message": "Code is empty, cannot generate blog."}
         
     try:
-        blog_content = generate_blog(problem)
+        blog_content = generate_blog(problem, problem.geminiKey)
     except Exception as e:
         return {"status": "error", "message": f"Gemini API failure: {str(e)}"}
         

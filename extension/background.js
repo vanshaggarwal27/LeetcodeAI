@@ -1,6 +1,6 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'GENERATE_BLOG') {
-        const { title, description, code, author, client_time } = request.payload;
+        const { title, description, code, author, client_time, geminiKey } = request.payload;
 
         // 🚀 API URL - Make sure this matches your deployed Render URL!
         // If testing locally, use "http://localhost:10000/generate-blog"
@@ -13,7 +13,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ title, description, code, author, client_time })
+            body: JSON.stringify({ title, description, code, author, client_time, geminiKey })
         })
             .then(response => response.json())
             .then(data => {

@@ -7,7 +7,7 @@
     let isProcessing = false;
 
     // Function to handle data extraction and blog generation
-    const triggerBlogGeneration = async () => {
+    const triggerBlogGeneration = async (geminiKey = null) => {
         if (isProcessing) return;
         isProcessing = true;
 
@@ -63,7 +63,7 @@
             // Send to background script
             chrome.runtime.sendMessage({
                 type: 'GENERATE_BLOG',
-                payload: { title, description, code, author, client_time }
+                payload: { title, description, code, author, client_time, geminiKey }
             });
 
             setTimeout(() => { isProcessing = false; }, 5000);
@@ -77,15 +77,17 @@
     // Start of Listener for manual triggers from popup
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (request.type === 'MANUAL_TRIGGER') {
-            triggerBlogGeneration();
+            triggerBlogGeneration(request.geminiKey);
         }
     });
 
     // Observer for automagic trigger on successful submission
-    const observer = new MutationObserver((mutations) => {
+    const observer = new MutationObserver(async (mutations) => {
         const resultElement = document.querySelector('[data-e2e-locator="submission-result"]');
         if (resultElement && resultElement.innerText.trim() === 'Accepted') {
-            triggerBlogGeneration();
+            // Check storage for key before auto-triggering
+            const data = await chrome.storage.local.get(['geminiKey']);
+            triggerBlogGeneration(data.geminiKey || null);
         }
     });
 
