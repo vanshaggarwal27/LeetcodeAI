@@ -7,10 +7,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const keyInputCallMeBot = document.getElementById('callmebotKey');
     
     // Load existing settings
-    const data = await chrome.storage.local.get(['geminiKey', 'reminderEnabled', 'phone', 'callmebotKey']);
+    const data = await chrome.storage.local.get(['geminiKey', 'reminderEnabled', 'phone']);
     if (data.geminiKey) keyInput.value = data.geminiKey;
     if (data.phone) phoneInput.value = data.phone;
-    if (data.callmebotKey) keyInputCallMeBot.value = data.callmebotKey;
     if (data.reminderEnabled) {
         reminderCheck.checked = true;
         reminderFields.style.display = 'block';
@@ -29,10 +28,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (enabled) chrome.runtime.sendMessage({ type: 'SCHEDULE_REMINDER' });
     });
 
-    [phoneInput, keyInputCallMeBot].forEach(el => {
-        el.addEventListener('input', () => {
-            chrome.storage.local.set({ [el.id]: el.value });
-        });
+    phoneInput.addEventListener('input', () => {
+        chrome.storage.local.set({ phone: phoneInput.value });
     });
 
     statusEl.innerText = "Dev.to Automation Active 🚀";

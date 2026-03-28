@@ -5,3 +5,4 @@ google-generativeai
 requests
 markdown
 python-dotenv
+twilio

@@ -19,6 +19,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .then(data => {
                 if (data.status === 'success') {
                     chrome.runtime.sendMessage({ type: 'STATUS_UPDATE', message: 'Posted ✅', status: 'success' });
+                    // Clear any pending retry reminders for tonight
+                    chrome.alarms.clear('leetcodes_retry');
                 } else {
                     chrome.runtime.sendMessage({ type: 'STATUS_UPDATE', message: 'API Error: ' + JSON.stringify(data), status: 'error' });
                 }
@@ -33,21 +35,37 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-// Alarm Listener for 11 PM Reminder
+// Alarm Listener for 11 PM Reminder and Retries
 chrome.alarms.onAlarm.addListener(async (alarm) => {
-    if (alarm.name === 'leetcodes_reminder') {
-        const data = await chrome.storage.local.get(['reminderEnabled', 'lastAcceptedDate', 'phone', 'callmebotKey']);
+    if (alarm.name === 'leetcodes_reminder' || alarm.name === 'leetcodes_retry') {
+        const data = await chrome.storage.local.get(['reminderEnabled', 'lastAcceptedDate', 'phone']);
         
-        if (!data.reminderEnabled || !data.phone || !data.callmebotKey) return;
+        if (!data.reminderEnabled || !data.phone) return;
 
         const today = new Date().toDateString();
         if (data.lastAcceptedDate !== today) {
-            console.log("LeetLog AI: Reminder condition met! Sending WhatsApp...");
+            console.log(`LeetLog AI: [${alarm.name}] Reminder condition met! Pulsing backend...`);
             
-            const text = "🚨 LeetLog Reminder: You haven't done any LeetCode questions today! Practice makes perfect. Go solve one now!";
-            const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(data.phone)}&text=${encodeURIComponent(text)}&apikey=${data.callmebotKey}`;
+            // Call backend to send WhatsApp reminder
+            const BACKEND_URL = "https://leetcodeai-backend.onrender.com/send-reminder";
             
-            fetch(url).catch(err => console.error("Reminder fetch failed:", err));
+            fetch(BACKEND_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ phone: data.phone })
+            })
+            .then(res => res.json())
+            .then(resData => {
+                console.log("Reminder success:", resData);
+                // Schedule a retry in 30 minutes if not already scheduled
+                if (alarm.name === 'leetcodes_reminder') {
+                     chrome.alarms.create('leetcodes_retry', { delayInMinutes: 30, periodInMinutes: 30 });
+                }
+            })
+            .catch(err => console.error("Reminder failure:", err));
+        } else {
+            // Condition met today, stop retrying
+            chrome.alarms.clear('leetcodes_retry');
         }
     }
 });

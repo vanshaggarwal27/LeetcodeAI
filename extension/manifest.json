@@ -12,8 +12,7 @@
   "host_permissions": [
     "https://leetcode.com/*",
     "http://localhost:10000/*",
-    "https://*.onrender.com/*",
-    "https://api.callmebot.com/*"
+    "https://*.onrender.com/*"
   ],
   "content_scripts": [
     {
