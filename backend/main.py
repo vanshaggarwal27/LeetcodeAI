@@ -29,7 +29,7 @@ class Problem(BaseModel):
     geminiKey: str = None    # Optional user provided API key
 
 class ReminderData(BaseModel):
-    phone: str
+    phone: str = None  # Make optional to allow hardcoded fallback
 
 QUOTES = [
     "The journey to FAANG starts with a single 'Accepted' submission. Keep grindin' DSA!",
@@ -63,6 +63,9 @@ def send_reminder(data: ReminderData):
     account_sid = os.getenv("TWILIO_ACCOUNT_SID")
     auth_token = os.getenv("TWILIO_AUTH_TOKEN")
     from_whatsapp = os.getenv("TWILIO_FROM_WHATSAPP", "whatsapp:+14155238886")
+    
+    # Use user provided phone if available, else hardcoded fallback
+    receiver_phone = data.phone if data.phone and data.phone.strip() != "" else "+917819834452"
 
     if not account_sid or not auth_token:
          return {"status": "error", "message": "Twilio credentials missing on server."}
@@ -75,9 +78,9 @@ def send_reminder(data: ReminderData):
         message = client.messages.create(
             from_=from_whatsapp,
             body=message_body,
-            to=f"whatsapp:{data.phone}"
+            to=f"whatsapp:{receiver_phone}"
         )
-        return {"status": "success", "message": f"Reminder sent to {data.phone} (SID: {message.sid})"}
+        return {"status": "success", "message": f"Reminder sent to {receiver_phone} (SID: {message.sid})"}
     except Exception as e:
         return {"status": "error", "message": f"Twilio Error: {str(e)}"}
 

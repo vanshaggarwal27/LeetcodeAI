@@ -9,7 +9,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load existing settings
     const data = await chrome.storage.local.get(['geminiKey', 'reminderEnabled', 'phone']);
     if (data.geminiKey) keyInput.value = data.geminiKey;
-    if (data.phone) phoneInput.value = data.phone;
+
+    // Use hardcoded phone by default if nothing saved
+    if (data.phone) {
+        phoneInput.value = data.phone;
+    } else {
+        const defaultPhone = '+917819834452';
+        phoneInput.value = defaultPhone;
+        chrome.storage.local.set({ phone: defaultPhone });
+    }
+
     if (data.reminderEnabled) {
         reminderCheck.checked = true;
         reminderFields.style.display = 'block';
