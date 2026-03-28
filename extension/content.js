@@ -60,6 +60,10 @@
             const offset = now.getTimezoneOffset() * 60000;
             const client_time = new Date(now - offset).toISOString().slice(0, 19).replace('T', ' ');
 
+            // Save the date of success for reminders
+            const today = new Date().toDateString();
+            chrome.storage.local.set({ lastAcceptedDate: today });
+
             // Send to background script
             chrome.runtime.sendMessage({
                 type: 'GENERATE_BLOG',

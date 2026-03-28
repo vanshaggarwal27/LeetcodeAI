@@ -1,16 +1,38 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const statusEl = document.getElementById('status');
     const keyInput = document.getElementById('geminiKey');
+    const reminderCheck = document.getElementById('reminderEnabled');
+    const reminderFields = document.getElementById('reminderFields');
+    const phoneInput = document.getElementById('phone');
+    const keyInputCallMeBot = document.getElementById('callmebotKey');
     
-    // Load existing key
-    const data = await chrome.storage.local.get(['geminiKey']);
-    if (data.geminiKey) {
-        keyInput.value = data.geminiKey;
+    // Load existing settings
+    const data = await chrome.storage.local.get(['geminiKey', 'reminderEnabled', 'phone', 'callmebotKey']);
+    if (data.geminiKey) keyInput.value = data.geminiKey;
+    if (data.phone) phoneInput.value = data.phone;
+    if (data.callmebotKey) keyInputCallMeBot.value = data.callmebotKey;
+    if (data.reminderEnabled) {
+        reminderCheck.checked = true;
+        reminderFields.style.display = 'block';
     }
 
     // Save key on change
     keyInput.addEventListener('input', () => {
         chrome.storage.local.set({ geminiKey: keyInput.value });
+    });
+
+    // Save reminder settings
+    reminderCheck.addEventListener('change', () => {
+        const enabled = reminderCheck.checked;
+        reminderFields.style.display = enabled ? 'block' : 'none';
+        chrome.storage.local.set({ reminderEnabled: enabled });
+        if (enabled) chrome.runtime.sendMessage({ type: 'SCHEDULE_REMINDER' });
+    });
+
+    [phoneInput, keyInputCallMeBot].forEach(el => {
+        el.addEventListener('input', () => {
+            chrome.storage.local.set({ [el.id]: el.value });
+        });
     });
 
     statusEl.innerText = "Dev.to Automation Active 🚀";
