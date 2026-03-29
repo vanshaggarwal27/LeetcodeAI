@@ -7,7 +7,7 @@
     let isProcessing = false;
 
     // Function to handle data extraction and blog generation
-    const triggerBlogGeneration = async (geminiKey = null) => {
+    const triggerBlogGeneration = async () => {
         if (isProcessing) return;
         isProcessing = true;
 
@@ -67,7 +67,7 @@
             // Send to background script
             chrome.runtime.sendMessage({
                 type: 'GENERATE_BLOG',
-                payload: { title, description, code, author, client_time, geminiKey }
+                payload: { title, description, code, author, client_time }
             });
 
             setTimeout(() => { isProcessing = false; }, 5000);
@@ -81,7 +81,7 @@
     // Start of Listener for manual triggers from popup
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (request.type === 'MANUAL_TRIGGER') {
-            triggerBlogGeneration(request.geminiKey);
+            triggerBlogGeneration();
         }
     });
 
@@ -91,7 +91,7 @@
         if (resultElement && resultElement.innerText.trim() === 'Accepted') {
             // Check storage for key before auto-triggering
             const data = await chrome.storage.local.get(['geminiKey']);
-            triggerBlogGeneration(data.geminiKey || null);
+            triggerBlogGeneration();
         }
     });
 

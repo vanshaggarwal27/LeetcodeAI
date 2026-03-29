@@ -4,18 +4,114 @@
     <meta charset="UTF-8">
     <title>LeetLog AI</title>
     <style>
-        body { width: 300px; padding: 15px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; text-align: center; }
-        button { background-color: #f7a01a; color: white; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer; border-radius: 5px; width: 100%; margin-top: 10px; font-weight: bold; }
-        button:disabled { background-color: #cccccc; cursor: not-allowed; }
-        #status { margin-top: 15px; font-weight: bold; font-size: 14px; color: #333; }
+        :root {
+            --primary: #f7a01a;
+            --primary-hover: #e58a00;
+            --bg: #ffffff;
+            --text: #333333;
+            --text-small: #666666;
+            --border: #dddddd;
+            --error: #e74c3c;
+            --success: #27ae60;
+        }
+        body { 
+            width: 320px; 
+            padding: 20px; 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            text-align: center;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            border-radius: 12px;
+        }
+        h2 { margin-top: 0; color: #1a1a1a; font-size: 22px; font-weight: 700; }
+        p { font-size: 13px; color: var(--text-small); margin-bottom: 20px; }
+        
+        .input-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: var(--text-small);
+            margin-bottom: 5px;
+            margin-left: 2px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus {
+            border-color: var(--primary);
+        }
+        
+        button { 
+            background-color: var(--primary); 
+            color: white; 
+            border: none; 
+            padding: 12px 20px; 
+            font-size: 16px; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            width: 100%; 
+            font-weight: 700;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px 6px rgba(247, 160, 26, 0.2);
+        }
+        button:hover { 
+            background-color: var(--primary-hover); 
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+        button:disabled { 
+            background-color: #cccccc; 
+            cursor: not-allowed; 
+            box-shadow: none;
+            transform: none;
+        }
+        
+        #status { 
+            margin-top: 18px; 
+            font-weight: 600; 
+            font-size: 12px; 
+            color: var(--text-small);
+            padding: 8px;
+            border-radius: 6px;
+            background: #f9f9f9;
+            min-height: 18px;
+        }
+        .error-status { color: var(--error); background: #fdf2f2 !important; }
+        .success-status { color: var(--success); background: #f2fdf5 !important; }
+        
+        .footer {
+            margin-top: 20px;
+            font-size: 10px;
+            color: #999;
+        }
     </style>
 </head>
 <body>
     <h2>LeetLog AI</h2>
-    <p>Generate a Dev.to blog for the current LeetCode problem.</p>
+    <p>Generate a professional Dev.to blog post for your current LeetCode problem instantly.</p>
     
     <button id="generateBtn">Generate Blog</button>
-    <div id="status">Idle</div>
+    
+    <div id="status">Ready to blog! 🚀</div>
+    
+    <div class="footer">
+        Powered by Gemini & LeetLog AI
+    </div>
+
     <script src="popup.js"></script>
 </body>
 </html>

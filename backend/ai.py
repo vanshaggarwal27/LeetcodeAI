@@ -5,14 +5,16 @@ from datetime import datetime
 
 load_dotenv()
 
-def generate_blog(problem, user_api_key=None):
-    # Use user-provided key if available, else fall back to backend .env key
-    api_key = user_api_key if user_api_key else os.getenv("GEMINI_API_KEY")
+def generate_blog(problem):
+    # Always use backend .env key
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise Exception("GEMINI_API_KEY missing in server .env file.")
+    
     genai.configure(api_key=api_key)
 
-    # Use 1.5-flash for higher free tier limits (usually 1500 RPD vs 20 RPD on 2.5-flash)
-    # Switch back to 2.5-flash once you upgrade to a Paid Tier for better performance.
-    model_name = "gemini-1.5-flash"
+    # Using the full model path as seen in list_models() for 2026.
+    model_name = "models/gemini-2.5-flash"
     model = genai.GenerativeModel(model_name)
     
     # Use client provided time if available, else fall back to backend local time (UTC on server)

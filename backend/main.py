@@ -32,7 +32,6 @@ class Problem(BaseModel):
     code: str
     author: str = "Anonymous Developer"
     client_time: str = None  # Optional client time string
-    geminiKey: str = None    # Optional user provided API key
 
 class ReminderData(BaseModel):
     phone: str = None  # Make optional to allow hardcoded fallback
@@ -55,7 +54,7 @@ def create_blog(problem: Problem):
         return {"status": "error", "message": "Code is empty, cannot generate blog."}
         
     try:
-        blog_content = generate_blog(problem, problem.geminiKey)
+        blog_content = generate_blog(problem)
     except Exception as e:
         return {"status": "error", "message": f"Gemini API failure: {str(e)}"}
         

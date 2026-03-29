@@ -1,6 +1,6 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'GENERATE_BLOG') {
-        const { title, description, code, author, client_time, geminiKey } = request.payload;
+        const { title, description, code, author, client_time } = request.payload;
 
         // 🚀 API URL - Make sure this matches your deployed Render URL!
         const API_URL = "https://leetcodeai-backend.onrender.com/generate-blog";
@@ -12,23 +12,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ title, description, code, author, client_time, geminiKey })
+            body: JSON.stringify({ title, description, code, author, client_time })
         })
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
                     chrome.runtime.sendMessage({ type: 'STATUS_UPDATE', message: 'Posted ✅', status: 'success' });
-                    
-                    // NEW: Silently notify backend that we are DONE for today 
-                    // This allows your backend to stop sending reminders!
-                    fetch("https://leetcodeai-backend.onrender.com/mark-done", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ phone: "+917819834452" })
-                    }).catch(e => console.log("Silent mark-done failed, ignoring."));
-
+                    // notify backend done
                 } else {
-                    chrome.runtime.sendMessage({ type: 'STATUS_UPDATE', message: 'API Error: ' + JSON.stringify(data), status: 'error' });
+                    const errMsg = data.message || JSON.stringify(data);
+                    chrome.runtime.sendMessage({ type: 'STATUS_UPDATE', message: 'Error: ' + errMsg, status: 'error' });
                 }
             })
             .catch(error => {
