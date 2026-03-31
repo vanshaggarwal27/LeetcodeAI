@@ -1,17 +1,32 @@
-# Backend
+# --- Python ---
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# --- Environment ---
 .env
+.env.local
+.env.*.local
+
+# --- Virtual Environments ---
 venv/
 .venv/
+env/
+ENV/
 
-# Extension
-node_modules/
-*.log
+# --- OS ---
 .DS_Store
+Thumbs.db
 
-# Temporary / Testing files
-/tmp/
-backend/test_*.py
-backend/trigger_test_call.py
-!backend/test_devto.py
+# --- Logs ---
+*.log
+
+# --- Misc ---
+node_modules/
+.idea/
+.vscode/

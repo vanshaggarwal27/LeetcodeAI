@@ -1,8 +1,6 @@
 fastapi
-uvicorn
+uvicorn[standard]
 pydantic
 google-generativeai
 requests
-markdown
 python-dotenv
-twilio
