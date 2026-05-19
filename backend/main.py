@@ -8,10 +8,8 @@ import uvicorn
 from dotenv import load_dotenv
 import os
 
-from alerts.scheduler import scheduler
 from services.reminder_scheduler import start_scheduler
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from twilio.rest import Client
 import motor.motor_asyncio
 
