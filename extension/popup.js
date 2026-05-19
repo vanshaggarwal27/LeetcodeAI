@@ -1,6 +1,41 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const statusEl = document.getElementById('status');
-    statusEl.innerText = "Dev.to Automation Active 🚀";
+    const platformInputs = Array.from(document.querySelectorAll('input[name="platform"]'));
+    const draftInput = document.getElementById('draftMode');
+
+    chrome.storage.local.get({
+        publishingPlatforms: ['devto'],
+        publishAsDraft: false
+    }, ({ publishingPlatforms, publishAsDraft }) => {
+        platformInputs.forEach(input => {
+            input.checked = publishingPlatforms.includes(input.value);
+        });
+        draftInput.checked = publishAsDraft;
+    });
+
+    const savePublishingSettings = () => {
+        const selectedPlatforms = platformInputs
+            .filter(input => input.checked)
+            .map(input => input.value);
+
+        if (selectedPlatforms.length === 0) {
+            const devtoInput = platformInputs.find(input => input.value === 'devto');
+            if (devtoInput) {
+                devtoInput.checked = true;
+                selectedPlatforms.push('devto');
+            }
+        }
+
+        chrome.storage.local.set({
+            publishingPlatforms: selectedPlatforms,
+            publishAsDraft: draftInput.checked
+        });
+    };
+
+    platformInputs.forEach(input => input.addEventListener('change', savePublishingSettings));
+    draftInput.addEventListener('change', savePublishingSettings);
+
+    statusEl.innerText = "Publishing automation active";
 });
 
 document.getElementById('generateBtn').addEventListener('click', async () => {
@@ -14,6 +49,7 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
     try {
         const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
         const tab = tabs[0];
+        const customPrompt = document.getElementById('customPrompt').value.trim();
         
         if (!tab || !tab.url || !tab.url.includes("leetcode.com/problems/")) {
             statusEl.innerText = "Please open a LeetCode problem page!";
@@ -24,7 +60,8 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
         // Try simple message first
         try {
             await chrome.tabs.sendMessage(tab.id, { 
-                type: 'MANUAL_TRIGGER'
+                type: 'MANUAL_TRIGGER',
+                custom_prompt: customPrompt 
             });
         } catch (msgErr) {
             console.log("Re-injecting content script...");
@@ -63,18 +100,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         statusEl.className = ""; // Reset
 
         if (request.status === 'success') {
-            statusEl.innerText = "Successfully posted to Dev.to! ✅";
+            statusEl.innerText = request.message || "Successfully posted";
             statusEl.className = "success-status";
             btn.disabled = false;
             setTimeout(() => { 
-                statusEl.innerText = "Dev.to Automation Active 🚀"; 
+                statusEl.innerText = "Publishing automation active";
                 statusEl.className = "";
             }, 5000);
         } else if (request.status === 'error') {
             statusEl.className = "error-status";
             btn.disabled = false;
+        } else if (request.status === 'warning') {
+            statusEl.className = "warning-status";
+            btn.disabled = false;
         } else if (request.status === 'loading') {
             statusEl.innerText = request.message || "Generating blog...";
         }
     }
+});
+document.getElementById('dashboardBtn').addEventListener('click', () => {
+  chrome.tabs.create({ url: chrome.runtime.getURL('dashboard.html') });
 });

@@ -1,4 +1,5 @@
 from apscheduler.schedulers.background import BackgroundScheduler
+
 from alerts.progress_checker import check_unsolved_users
 
 scheduler = BackgroundScheduler()

@@ -1,4 +1,4 @@
-import google.generativeai as genai
+from google import genai
 import os
 import time
 import logging
@@ -27,8 +27,20 @@ def _difficulty_badge(difficulty: str) -> str:
 
 
 def _build_prompt(problem, current_time: str) -> str:
+def _build_prompt(problem, current_time: str) -> str:
+    """
+    Build the prompt string to send to Gemini AI.
+
+    Args:
+       problem: LeetCode problem object containing title, description, code and author
+       current_time: Current timestamp string
+
+    Returns:
+        str: Formatted prompt string for Gemini AI
+    """
     badge = _difficulty_badge(problem.difficulty or "Unknown")
-    return f"""
+
+    default_prompt = f"""
 You are a professional technical writer and competitive programmer.
 
 Generate a highly engaging, beginner-friendly Dev.to blog post about a LeetCode problem.
@@ -68,9 +80,29 @@ CRITICAL INSTRUCTIONS:
   - Always provide an EMPTY LINE before and after the table to ensure correct rendering.
 """
 
+    custom_instructions = ""
+    if hasattr(problem, "custom_prompt") and problem.custom_prompt:
+        cleaned = problem.custom_prompt.strip()
+        if cleaned:
+            custom_instructions = f"""
+Additional User Prompt Preferences:
+{cleaned}
+"""
+
+    return f"{default_prompt}{custom_instructions}"
+
+
 
 def _clean_response(text: str) -> str:
-    """Strip accidental markdown fences Gemini sometimes wraps output in."""
+    """
+    Strip accidental markdown fences Gemini sometimes wraps output in.
+    
+    Args:
+       text: Raw response text from Gemini API
+    
+    Returns:
+       str: Cleaned markdown text without code fences
+    """
     text = text.strip()
     if text.startswith("```markdown"):
         text = text[11:]
@@ -94,7 +126,7 @@ def generate_blog(problem) -> str:
     if not api_key:
         raise Exception("GEMINI_API_KEY is not set. Add it to backend/.env")
 
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
 
     current_time = (
         problem.client_time
@@ -107,11 +139,13 @@ def generate_blog(problem) -> str:
 
     for model_name in MODEL_FALLBACK_CHAIN:
         logger.info("Trying model: %s", model_name)
-        model = genai.GenerativeModel(model_name)
 
         for attempt in range(1, MAX_RETRIES + 1):
             try:
-                response = model.generate_content(prompt)
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt
+                )
 
                 if not response.text:
                     raise Exception("Received empty response from Gemini API.")
@@ -122,7 +156,7 @@ def generate_blog(problem) -> str:
                 error_str = str(e)
 
                 # --- Leaked / invalid key: no point retrying ---
-                if "403" in error_str or "leaked" in error_str.lower() or "API key" in error_str:
+                if "403" in error_str and ("leaked" in error_str.lower() or "invalid" in error_str.lower()):
                     raise Exception(
                         "Your Gemini API key is invalid or has been reported as leaked. "
                         "Please generate a new key at https://aistudio.google.com/app/apikey "

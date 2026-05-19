@@ -1,4 +1,3 @@
-import os
 
 def generate_message(user_name: str):
     return f"""

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "LeetLog AI (Dev.to)",
+  "name": "LeetLog AI",
   "version": "1.0.1",
-  "description": "Auto-generate Dev.to blogs from LeetCode using Gemini",
+  "description": "Auto-generate and publish LeetCode blogs across multiple platforms using Gemini",
   "permissions": [
     "activeTab",
     "scripting",

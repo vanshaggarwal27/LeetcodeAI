@@ -17,6 +17,7 @@ build/
 venv/
 .venv/
 env/
+backend/.env
 ENV/
 
 # --- OS ---
@@ -30,3 +31,4 @@ Thumbs.db
 node_modules/
 .idea/
 .vscode/
+

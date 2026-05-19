@@ -1,5 +1,6 @@
 from alerts.elevenlabs_service import generate_message
 
+
 def check_unsolved_users():
     users = [
         {

@@ -1,4 +1,5 @@
 from apscheduler.schedulers.background import BackgroundScheduler
+
 from utils.progress_checker import has_completed_daily_problem
 
 scheduler = BackgroundScheduler()
