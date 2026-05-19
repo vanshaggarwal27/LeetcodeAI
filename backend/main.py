@@ -58,6 +58,7 @@ class Problem(BaseModel):
     code: str
     author: str = "Anonymous Developer"
     client_time: str | None = None
+    difficulty: str | None = "Unknown"
 
 
 class ReminderPreference(BaseModel):

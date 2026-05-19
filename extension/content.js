@@ -43,6 +43,11 @@
                 }
             }
 
+            // Extract difficulty badge
+            const difficultyElement = document.querySelector('[class*="difficulty"]') ||
+                document.querySelector('[class*="Difficulty"]');
+            const difficulty = difficultyElement ? difficultyElement.innerText.trim() : "Unknown";
+
             // Extract the user's LeetCode Username
             let author = "Anonymous LeetCoder";
             const allLinks = document.querySelectorAll('a[href^="/u/"]');
@@ -67,7 +72,7 @@
             // Send to background script
             chrome.runtime.sendMessage({
                 type: 'GENERATE_BLOG',
-                payload: { title, description, code, author, client_time }
+                payload: { title, description, code, author, client_time, difficulty }
             });
 
 

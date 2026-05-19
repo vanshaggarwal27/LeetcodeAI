@@ -21,7 +21,13 @@ MAX_RETRIES = 3
 INITIAL_BACKOFF_SECONDS = 35  # Free tier asks to retry after ~35s
 
 
+def _difficulty_badge(difficulty: str) -> str:
+    badges = {"Easy": "🟢 Easy", "Medium": "🟡 Medium", "Hard": "🔴 Hard"}
+    return badges.get(difficulty, f"⚪ {difficulty}")
+
+
 def _build_prompt(problem, current_time: str) -> str:
+    badge = _difficulty_badge(problem.difficulty or "Unknown")
     return f"""
 You are a professional technical writer and competitive programmer.
 
@@ -30,6 +36,7 @@ Generate a highly engaging, beginner-friendly Dev.to blog post about a LeetCode 
 Author Account: {problem.author}
 Publishing Time: {current_time}
 Title: {problem.title}
+Difficulty: {badge}
 
 Problem Description:
 {problem.description}
@@ -39,13 +46,14 @@ Solution Code:
 
 Strictly follow this structure:
 1. Title (Use an engaging # Title instead of YAML)
-2. Problem Explanation (explain it simply, as if to a beginner)
-3. Intuition (the "aha!" moment)
-4. Approach (step-by-step logic)
-5. Code (formatted clearly inside markdown code blocks, specify language if obvious)
-6. Time & Space Complexity Analysis
-7. Key Takeaways
-8. Submission Details (MUST include the Author Account [{problem.author}] and the Time Published [{current_time}] in a concluding footnote)
+2. Difficulty Badge — render it prominently right below the title as: **Difficulty:** {badge}
+3. Problem Explanation (explain it simply, as if to a beginner)
+4. Intuition (the "aha!" moment)
+5. Approach (step-by-step logic)
+6. Code (formatted clearly inside markdown code blocks, specify language if obvious)
+7. Time & Space Complexity Analysis
+8. Key Takeaways
+9. Submission Details (MUST include the Author Account [{problem.author}] and the Time Published [{current_time}] in a concluding footnote)
 
 CRITICAL INSTRUCTIONS:
 - DO NOT wrap the output in ```markdown or ``` tags. Return raw markdown text.
