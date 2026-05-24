@@ -120,6 +120,10 @@ Create a `.env` file inside the `backend/` directory:
 ```bash
 # backend/.env
 GEMINI_API_KEY=your_google_gemini_key_here
+
+# MongoDB is required for local development
+MONGODB_URI=mongodb://localhost:27017/leetcodeai
+
 DEVTO_API_KEY=your_devto_api_key_here
 HASHNODE_TOKEN=your_hashnode_token_here
 HASHNODE_PUBLICATION_ID=your_hashnode_publication_id_here
@@ -128,12 +132,40 @@ MEDIUM_USER_ID=your_medium_user_id_here
 BLOG_WEBHOOK_URL=https://your-blog.example.com/api/publish
 ```
 
+#### Setting Up MongoDB
+
+**Option 1: Run MongoDB Locally with Docker** (Recommended)
+
+If MongoDB is not installed locally, run it using Docker:
+
+```bash
+docker run -d \
+  --name leetcodeai-mongo \
+  -p 27017:27017 \
+  mongo:latest
+```
+
+Verify the container is running:
+
+```bash
+docker ps
+```
+
+**Option 2: Use MongoDB Atlas**
+
+Alternatively, use a MongoDB Atlas cluster and update `MONGODB_URI` accordingly:
+
+```bash
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-url>/leetcodeai
+```
+
 Where to get your keys:
 - **Gemini API Key** → [Google AI Studio](https://aistudio.google.com/app/apikey)
 - **Dev.to API Key** → [Dev.to Settings → Extensions](https://dev.to/settings/extensions)
 - **Hashnode** → create a developer token and copy the publication ID for the blog you want to publish to
 - **Medium** → create an integration token and set the target Medium user ID
 - **Personal blog webhook** → expose an endpoint that accepts `title`, `body_markdown`, `tags`, `published`, and `source`
+- **MongoDB URI** → Use the local Docker URI or create a cluster on [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
 
 > ⚠️ **Never commit your `.env` file.** It is already in `.gitignore`.
 
@@ -165,9 +197,13 @@ To test the extension against your local server:
 4. Select the `extension/` folder from the cloned repo
 
 > The extension in `background.js` points to the deployed Render URL by default.
-> For local testing, temporarily change `API_URL` in `background.js`:
+> For local testing, temporarily change `API_BASE_URL` in `background.js`:
 > ```js
-> const API_URL = "http://localhost:10000/generate-blog";
+> const API_BASE_URL = "http://localhost:10000";
+> ```
+> Or use:
+> ```js
+> const API_BASE_URL = "http://0.0.0.0:10000";
 > ```
 
 ---
