@@ -13,13 +13,11 @@ from __future__ import annotations
 import importlib
 import sys
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
 import pytest
 import responses
 from fastapi.testclient import TestClient
-
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 
@@ -124,13 +122,13 @@ def mock_db(app_module):
 @pytest.fixture
 def mock_gemini_client(mocker):
     ai_module = importlib.import_module("ai")
-    
+
     response = Mock(name="gemini_response")
     response.text = "# Mock blog content"
-    
+
     mock_client = Mock(name="gemini_client")
     mock_client.models.generate_content.return_value = response
-    
+
     client_factory = mocker.patch.object(
         ai_module.genai,
         "Client",

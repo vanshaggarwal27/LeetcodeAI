@@ -1,6 +1,3 @@
-import httpx
-import os
-import asyncio
 import os
 import time
 from dataclasses import dataclass
@@ -29,26 +26,6 @@ class PublishResult:
             "platform": self.platform,
             "status": self.status,
         }
-
-
-async def post_to_platform(title, content):
-    if not API_KEY:
-        raise Exception("Dev.to API key missing. Please set DEVTO_API_KEY in .env.")
-
-    url = "https://dev.to/api/articles"
-
-    headers = {
-        "api-key": API_KEY,
-        "Content-Type": "application/json"
-    }
-
-    data = {
-        "article": {
-            "title": f"LeetCode Solution: {title}",
-            "body_markdown": content,
-            "published": True,
-            "tags": DEFAULT_TAGS
-
         if self.url:
             payload["url"] = self.url
         if self.response is not None:

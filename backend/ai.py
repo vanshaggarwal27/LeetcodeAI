@@ -1,9 +1,10 @@
-from google import genai
+import logging
 import os
 import time
-import logging
-from dotenv import load_dotenv
 from datetime import datetime
+
+from dotenv import load_dotenv
+from google import genai
 
 load_dotenv()
 
@@ -27,7 +28,6 @@ def _difficulty_badge(difficulty: str) -> str:
 
 
 def _build_prompt(problem, current_time: str) -> str:
-def _build_prompt(problem, current_time: str) -> str:
     """
     Build the prompt string to send to Gemini AI.
 
@@ -38,7 +38,8 @@ def _build_prompt(problem, current_time: str) -> str:
     Returns:
         str: Formatted prompt string for Gemini AI
     """
-    badge = _difficulty_badge(problem.difficulty or "Unknown")
+    difficulty_val = getattr(problem, "difficulty", "Unknown") or "Unknown"
+    badge = _difficulty_badge(difficulty_val)
 
     default_prompt = f"""
 You are a professional technical writer and competitive programmer.
@@ -96,10 +97,10 @@ Additional User Prompt Preferences:
 def _clean_response(text: str) -> str:
     """
     Strip accidental markdown fences Gemini sometimes wraps output in.
-    
+
     Args:
        text: Raw response text from Gemini API
-    
+
     Returns:
        str: Cleaned markdown text without code fences
     """

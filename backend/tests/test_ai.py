@@ -10,8 +10,9 @@ class TestGenerateBlog:
         self, app_module, mock_gemini_client
     ):
         """generate_blog returns a non-empty string."""
-        from ai import generate_blog
         from types import SimpleNamespace
+
+        from ai import generate_blog
 
         problem = SimpleNamespace(
             title="Two Sum",
@@ -28,8 +29,9 @@ class TestGenerateBlog:
         self, app_module, mock_gemini_client
     ):
         """generate_blog calls the Gemini model exactly once."""
-        from ai import generate_blog
         from types import SimpleNamespace
+
+        from ai import generate_blog
 
         problem = SimpleNamespace(
             title="Two Sum",
@@ -45,8 +47,9 @@ class TestGenerateBlog:
         self, app_module, mock_gemini_client
     ):
         """The prompt sent to Gemini includes the problem title."""
-        from ai import generate_blog
         from types import SimpleNamespace
+
+        from ai import generate_blog
 
         problem = SimpleNamespace(
             title="Unique Problem Title XYZ",

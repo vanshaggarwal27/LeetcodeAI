@@ -3,11 +3,10 @@ Unit tests for the Dev.to publishing service in devto.py.
 Tests use mock_devto_request to avoid real HTTP calls.
 """
 
-import os
 import sys
-import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch
+
+import pytest
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 if str(BACKEND_DIR) not in sys.path:
@@ -73,6 +72,6 @@ class TestNormalizePlatforms:
         assert result == ["devto"]
 
     def test_rejects_unknown_provider(self):
-        from devto import normalize_platforms, PublisherError
+        from devto import PublisherError, normalize_platforms
         with pytest.raises(PublisherError):
             normalize_platforms(["wordpress"])

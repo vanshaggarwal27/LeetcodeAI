@@ -1,4 +1,5 @@
 import os
+
 import motor.motor_asyncio
 import uvicorn
 from dotenv import load_dotenv
