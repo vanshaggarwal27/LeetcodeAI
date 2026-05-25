@@ -9,7 +9,6 @@ import pytest
 
 
 class TestHealthRoutes:
-
     def test_root_returns_ok(self, client):
         response = client.get("/")
         assert response.status_code == 200
@@ -22,7 +21,6 @@ class TestHealthRoutes:
 
 
 class TestGenerateBlogRoute:
-
     def test_happy_path_returns_success(
         self, client, mock_generate_blog, mock_post_to_platform
     ):
@@ -140,7 +138,6 @@ class TestGenerateBlogRoute:
 
 
 class TestReminderRoutes:
-
     def test_subscribe_valid_payload(self, client, mock_db):
         """Valid subscription payload is accepted."""
         payload = {

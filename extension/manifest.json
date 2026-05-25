@@ -10,7 +10,7 @@
   ],
   "host_permissions": [
     "https://leetcode.com/*",
-    "http://localhost:10000/*",
+    "https://leetcodeai-backend.onrender.com/*",
     "https://*.onrender.com/*"
   ],
   "content_scripts": [

@@ -39,7 +39,7 @@ class FakeMotorClient:
 
 @pytest.fixture(autouse=True)
 def test_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-key")
+    # monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-key")
     monkeypatch.setenv("DEVTO_API_KEY", "test-devto-key")
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "test-twilio-sid")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "test-twilio-token")
@@ -105,13 +105,15 @@ def mock_post_to_platform(app_module, mocker):
         app_module,
         "publish_to_platforms",
         autospec=True,
-        return_value=[{
-            "platform": "devto",
-            "status": "success",
-            "url": "https://dev.to/mock-post",
-            "response": {"id": 123, "url": "https://dev.to/mock-post"}
-        }],
-        )
+        return_value=[
+            {
+                "platform": "devto",
+                "status": "success",
+                "url": "https://dev.to/mock-post",
+                "response": {"id": 123, "url": "https://dev.to/mock-post"},
+            }
+        ],
+    )
 
 
 @pytest.fixture

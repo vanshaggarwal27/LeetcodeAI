@@ -171,13 +171,75 @@
     </fieldset>
     
     <button id="generateBtn">Generate Blog</button>
+
+    <div id="previewSection"
+     style="display:none; margin-top:16px;">
+
+        <h3 style="margin-bottom:10px;">
+            Preview & Edit Blog
+        </h3>
+
+        <textarea id="blogEditor"
+            style="
+                width:100%;
+                min-height:300px;
+                padding:10px;
+                border-radius:8px;
+                resize:vertical;
+                background:#1e1e1e;
+                color:white;
+                border:1px solid #444;
+            ">
+        </textarea>
+
+        <div style="margin-top:12px; display:flex; gap:10px;">
+
+            <button id="publishBtn"
+                style="background:#27ae60;">
+                Publish Blog
+            </button>
+
+            <button id="cancelPreviewBtn"
+                style="background:#e74c3c;">
+                Cancel
+            </button>
+
+        </div>
+    </div>
+
+    <div id="exportSection" style="display:none; margin-top:12px;">
+        <button id="exportMarkdownBtn"
+            style="margin-bottom:8px; background:#2d7ef7;">
+            Export Markdown
+        </button>
+
+        <button id="exportHTMLBtn"
+            style="margin-bottom:8px; background:#27ae60;">
+            Export HTML
+        </button>
+
+        <button id="exportPDFBtn"
+            style="background:#e74c3c;">
+            Export PDF
+        </button>
+    </div>
+    
+    <div id="progressContainer" style="display:none; margin-top:16px;">
+        <div style="font-size:12px; color:var(--text-small); margin-bottom:5px; display:flex; justify-content:space-between;">
+            <span id="progressText" style="font-weight:600;">Generating & Publishing...</span>
+            <span id="timeLeft" style="font-weight:600; color:var(--primary);">~15s</span>
+        </div>
+        <div style="width:100%; background:#e0e0e0; border-radius:6px; height:8px; overflow:hidden;">
+            <div id="progressBar" style="width:0%; background:var(--primary); height:100%; transition:width 0.1s linear;"></div>
+        </div>
+    </div>
     
     <div id="status">Ready to blog! 🚀</div>
 <button id="dashboardBtn" style="margin-top:8px;background:#1a1a2e;font-size:13px;padding:10px;color:#f7a01a;width:100%;border-radius:8px;cursor:pointer;border:1px solid #f7a01a;">📊 View Dashboard</button>    
     <div class="footer">
         Powered by Gemini & LeetLog AI
     </div>
-
+    <script src="html2pdf.bundle.min.js"></script>
     <script src="popup.js"></script>
 </body>
 </html>

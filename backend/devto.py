@@ -42,7 +42,9 @@ class PublisherError(Exception):
 class BasePublisher:
     platform = "base"
 
-    def publish(self, title: str, content: str, *, tags: list[str], published: bool) -> PublishResult:
+    def publish(
+        self, title: str, content: str, *, tags: list[str], published: bool
+    ) -> PublishResult:
         raise NotImplementedError
 
     @staticmethod
@@ -73,10 +75,14 @@ class BasePublisher:
 class DevToPublisher(BasePublisher):
     platform = "devto"
 
-    def publish(self, title: str, content: str, *, tags: list[str], published: bool) -> PublishResult:
+    def publish(
+        self, title: str, content: str, *, tags: list[str], published: bool
+    ) -> PublishResult:
         api_key = os.getenv("DEVTO_API_KEY")
         if not api_key:
-            raise PublisherError("Dev.to API key missing. Please set DEVTO_API_KEY in .env.")
+            raise PublisherError(
+                "Dev.to API key missing. Please set DEVTO_API_KEY in .env."
+            )
 
         response = self._post_with_retries(
             "https://dev.to/api/articles",
@@ -105,7 +111,9 @@ class DevToPublisher(BasePublisher):
 class HashnodePublisher(BasePublisher):
     platform = "hashnode"
 
-    def publish(self, title: str, content: str, *, tags: list[str], published: bool) -> PublishResult:
+    def publish(
+        self, title: str, content: str, *, tags: list[str], published: bool
+    ) -> PublishResult:
         token = os.getenv("HASHNODE_TOKEN")
         publication_id = os.getenv("HASHNODE_PUBLICATION_ID")
         if not token or not publication_id:
@@ -156,11 +164,15 @@ class HashnodePublisher(BasePublisher):
 class MediumPublisher(BasePublisher):
     platform = "medium"
 
-    def publish(self, title: str, content: str, *, tags: list[str], published: bool) -> PublishResult:
+    def publish(
+        self, title: str, content: str, *, tags: list[str], published: bool
+    ) -> PublishResult:
         token = os.getenv("MEDIUM_TOKEN")
         user_id = os.getenv("MEDIUM_USER_ID")
         if not token or not user_id:
-            raise PublisherError("Medium publishing requires MEDIUM_TOKEN and MEDIUM_USER_ID.")
+            raise PublisherError(
+                "Medium publishing requires MEDIUM_TOKEN and MEDIUM_USER_ID."
+            )
 
         response = self._post_with_retries(
             f"https://api.medium.com/v1/users/{user_id}/posts",
@@ -190,7 +202,9 @@ class MediumPublisher(BasePublisher):
 class WebhookPublisher(BasePublisher):
     platform = "webhook"
 
-    def publish(self, title: str, content: str, *, tags: list[str], published: bool) -> PublishResult:
+    def publish(
+        self, title: str, content: str, *, tags: list[str], published: bool
+    ) -> PublishResult:
         webhook_url = os.getenv("BLOG_WEBHOOK_URL")
         if not webhook_url:
             raise PublisherError("Personal blog publishing requires BLOG_WEBHOOK_URL.")

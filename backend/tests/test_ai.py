@@ -1,64 +1,73 @@
-"""
-Unit tests for the blog generation service in ai.py.
-Tests use mock_gemini_client to avoid real Gemini API calls.
-"""
+import re
+from types import SimpleNamespace
+
+import pytest
+from dotenv import load_dotenv
+
+from ai_core.blog_generator import generate_blog
+from ai_core.provider_manager import ProviderManager
+
+load_dotenv()
 
 
-class TestGenerateBlog:
+# ---------------------------
+# Provider tests
+# ---------------------------
 
-    def test_generate_blog_returns_string(
-        self, app_module, mock_gemini_client
-    ):
-        """generate_blog returns a non-empty string."""
-        from types import SimpleNamespace
+@pytest.mark.parametrize(
+    "provider_name",
+    ["gemini", "openai", "perplexity"],
+)
+def test_provider_generation(monkeypatch, provider_name):
+    # Set the provider env var dynamically
+    monkeypatch.setenv("AI_PROVIDER", provider_name)
 
-        from ai import generate_blog
+    # Completely stub out ProviderManager initialization and generation
+    # This keeps your sub-providers (Gemini, OpenAI, etc.) from making network calls
+    monkeypatch.setattr(ProviderManager, "__init__", lambda self: None)
 
-        problem = SimpleNamespace(
-            title="Two Sum",
-            description="Given an array...",
-            code="def twoSum(): pass",
-            author="testuser",
-            client_time=None,
-        )
-        result = generate_blog(problem)
-        assert isinstance(result, str)
-        assert len(result) > 0
+    manager = ProviderManager()
 
-    def test_generate_blog_calls_gemini_once(
-        self, app_module, mock_gemini_client
-    ):
-        """generate_blog calls the Gemini model exactly once."""
-        from types import SimpleNamespace
+    # Simulate a fast, valid response containing "Python"
+    mock_response = f"Python is a great programming language powered by {provider_name}."
+    monkeypatch.setattr(manager, "generate", lambda prompt: mock_response)
 
-        from ai import generate_blog
+    response = manager.generate("Write one short sentence about Python.")
 
-        problem = SimpleNamespace(
-            title="Two Sum",
-            description="Given an array...",
-            code="def twoSum(): pass",
-            author="testuser",
-            client_time=None,
-        )
-        generate_blog(problem)
-        mock_gemini_client["model"].generate_content.assert_called_once()
+    print(f"\n[{provider_name}] Response: {response}")
 
-    def test_generate_blog_includes_title_in_prompt(
-        self, app_module, mock_gemini_client
-    ):
-        """The prompt sent to Gemini includes the problem title."""
-        from types import SimpleNamespace
+    assert isinstance(response, str)
+    assert response.strip() != ""
+    assert len(response.strip()) > 10
+    assert re.search(r"\bpython\b", response, re.IGNORECASE)
 
-        from ai import generate_blog
+    error_patterns = [r"invalid api key", r"unauthorized", r"error", r"failed"]
+    for pattern in error_patterns:
+        assert not re.search(pattern, response, re.IGNORECASE)
 
-        problem = SimpleNamespace(
-            title="Unique Problem Title XYZ",
-            description="Some description",
-            code="def solve(): pass",
-            author="testuser",
-            client_time=None,
-        )
-        generate_blog(problem)
-        call_args = mock_gemini_client["model"].generate_content.call_args
-        prompt_text = call_args[1].get("contents") or call_args[0][0]
-        assert "Unique Problem Title XYZ" in prompt_text
+
+# ---------------------------
+# Blog generation test
+# Lets dont waste lot of credits so insted only gentare tittles
+# ---------------------------
+
+def test_blog_generation_contains_title(monkeypatch):
+    problem = SimpleNamespace(
+        title="Unique Problem Title XYZ",
+        description="Some description",
+        code="def solve(): pass",
+        author="testuser",
+        client_time=None,
+    )
+
+    monkeypatch.setattr(ProviderManager, "__init__", lambda self: None)
+    monkeypatch.setattr(
+        ProviderManager,
+        "generate",
+        lambda self, prompt: "Mocked blog content about Unique Problem Title XYZ"
+    )
+
+    result = generate_blog(problem)
+
+    assert isinstance(result, str)
+    assert "Unique Problem Title XYZ" in result

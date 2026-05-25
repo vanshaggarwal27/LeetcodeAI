@@ -12,6 +12,7 @@ build/
 .env
 .env.local
 .env.*.local
+extension/LeetcodeAI.code-workspace
 
 # --- Virtual Environments ---
 venv/

@@ -18,3 +18,4 @@ pytest-mock
 httpx
 responses
 ruff
+tweepy==4.14.0
