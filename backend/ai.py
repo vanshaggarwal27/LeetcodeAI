@@ -1,10 +1,5 @@
 import logging
 import os
-import time
-from datetime import datetime
-
-from dotenv import load_dotenv
-from google import genai
 from datetime import datetime
 
 import requests
@@ -106,6 +101,22 @@ def _build_prompt(problem, current_time: str) -> str:
     difficulty_val = getattr(problem, "difficulty", "Unknown") or "Unknown"
     badge = _difficulty_badge(difficulty_val)
 
+    if _is_malicious(problem.description) and _is_malicious(problem.code):
+        raise ValueError(
+            "Blog generation cancelled. Malicious prompt detected in custom_prompt"
+        )
+    if (
+        hasattr(problem, "custom_prompt")
+        and problem.custom_prompt
+        and _is_malicious(problem.custom_prompt)
+    ):
+        raise ValueError(
+            "Blog generation cancelled. Malicious prompt detected in custom_prompt"
+        )
+
+    compressed_code = _compress_prompt(problem.code, MAX_CODE_CHARS)
+    compressed_desc = _compress_prompt(problem.description, MAX_DESC_CHARS)
+
     default_prompt = f"""
 You are a professional technical writer and competitive programmer.
 
@@ -117,10 +128,10 @@ Title: {problem.title}
 Difficulty: {badge}
 
 Problem Description:
-{problem.description}
+{compressed_desc}
 
 Solution Code:
-{problem.code}
+{compressed_code}
 
 Strictly follow this structure:
 1. Title (Use an engaging # Title instead of YAML)
@@ -145,21 +156,6 @@ CRITICAL INSTRUCTIONS:
   - Ensure the separator line is continuous (no line breaks) and uses at least 3 dashes per column.
   - Always provide an EMPTY LINE before and after the table to ensure correct rendering.
 """
-    if _is_malicious(problem.description) and _is_malicious(problem.code):
-        raise ValueError(
-            "Blog generation cancelled. Malicious prompt detected in custom_prompt"
-        )
-    if (
-        hasattr(problem, "custom_prompt")
-        and problem.custom_prompt
-        and _is_malicious(problem.custom_prompt)
-    ):
-        raise ValueError(
-            "Blog generation cancelled. Malicious prompt detected in custom_prompt"
-        )
-
-    compressed_code = _compress_prompt(problem.code, MAX_CODE_CHARS)
-    compressed_desc = _compress_prompt(problem.description, MAX_DESC_CHARS)
 
     custom_instructions = ""
     if hasattr(problem, "custom_prompt") and problem.custom_prompt:
