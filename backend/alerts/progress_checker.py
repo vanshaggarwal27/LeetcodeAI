@@ -39,9 +39,6 @@ async def _check_unsolved_users_async():
         lc_username = user.get("leetcode_username", "vanshaggarwal27")
         if not has_solved and lc_username:
             try:
-                import asyncio
-                import datetime
-
                 import requests
 
                 def check_lc():
