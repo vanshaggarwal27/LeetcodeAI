@@ -92,22 +92,88 @@
         }
         .error-status { color: var(--error); background: #fdf2f2 !important; }
         .success-status { color: var(--success); background: #f2fdf5 !important; }
+        .warning-status { color: var(--primary-hover); background: #fff8eb !important; }
         
         .footer {
             margin-top: 20px;
             font-size: 10px;
             color: #999;
         }
+        .platform-panel {
+            text-align: left;
+            margin-bottom: 16px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .platform-panel legend {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-small);
+            padding: 0 4px;
+        }
+        .platform-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--text);
+            text-transform: none;
+            font-weight: 600;
+        }
+        .platform-option input {
+            width: auto;
+            margin: 0;
+            accent-color: var(--primary);
+        }
+        .draft-option {
+            border-top: 1px solid var(--border);
+            margin-top: 10px;
+            padding-top: 10px;
+        }
     </style>
 </head>
 <body>
     <h2>LeetLog AI</h2>
     <p>Generate a professional Dev.to blog post for your current LeetCode problem instantly.</p>
+    <div class="input-group">
+        <label for="customPrompt">Custom Prompt (Optional)</label>
+        <textarea id="customPrompt" placeholder="e.g. Make it more humorous, add more examples..." 
+            style="width:100%; padding:10px; border:1px solid var(--border); border-radius:6px; font-size:13px; box-sizing:border-box; resize:vertical; min-height:70px; outline:none; font-family:inherit;"></textarea>
+    </div>
+    <p>Generate and publish a professional LeetCode blog post instantly.</p>
+
+    <fieldset class="platform-panel">
+        <legend>Publish to</legend>
+        <label class="platform-option">
+            <input type="checkbox" name="platform" value="devto" checked>
+            Dev.to
+        </label>
+        <label class="platform-option">
+            <input type="checkbox" name="platform" value="hashnode">
+            Hashnode
+        </label>
+        <label class="platform-option">
+            <input type="checkbox" name="platform" value="medium">
+            Medium
+        </label>
+        <label class="platform-option">
+            <input type="checkbox" name="platform" value="webhook">
+            Personal blog webhook
+        </label>
+        <label class="platform-option draft-option">
+            <input type="checkbox" id="draftMode">
+            Publish as draft
+        </label>
+    </fieldset>
     
     <button id="generateBtn">Generate Blog</button>
     
     <div id="status">Ready to blog! 🚀</div>
-    
+<button id="dashboardBtn" style="margin-top:8px;background:#1a1a2e;font-size:13px;padding:10px;color:#f7a01a;width:100%;border-radius:8px;cursor:pointer;border:1px solid #f7a01a;">📊 View Dashboard</button>    
     <div class="footer">
         Powered by Gemini & LeetLog AI
     </div>

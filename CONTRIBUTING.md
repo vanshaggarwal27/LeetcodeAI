@@ -121,11 +121,19 @@ Create a `.env` file inside the `backend/` directory:
 # backend/.env
 GEMINI_API_KEY=your_google_gemini_key_here
 DEVTO_API_KEY=your_devto_api_key_here
+HASHNODE_TOKEN=your_hashnode_token_here
+HASHNODE_PUBLICATION_ID=your_hashnode_publication_id_here
+MEDIUM_TOKEN=your_medium_integration_token_here
+MEDIUM_USER_ID=your_medium_user_id_here
+BLOG_WEBHOOK_URL=https://your-blog.example.com/api/publish
 ```
 
 Where to get your keys:
 - **Gemini API Key** → [Google AI Studio](https://aistudio.google.com/app/apikey)
 - **Dev.to API Key** → [Dev.to Settings → Extensions](https://dev.to/settings/extensions)
+- **Hashnode** → create a developer token and copy the publication ID for the blog you want to publish to
+- **Medium** → create an integration token and set the target Medium user ID
+- **Personal blog webhook** → expose an endpoint that accepts `title`, `body_markdown`, `tags`, `published`, and `source`
 
 > ⚠️ **Never commit your `.env` file.** It is already in `.gitignore`.
 
@@ -259,3 +267,56 @@ Found something broken? Please [open an issue](https://github.com/vanshaggarwal2
 ---
 
 Thank you for being part of LeetLog AI! Every contribution — big or small — matters. 🚀
+---
+
+## Running Tests Locally
+
+### Prerequisites
+- Python 3.10+
+- All dependencies installed
+
+### Setup
+
+cd backend
+pip install -r requirements.txt
+
+### Run the full test suite
+
+make test
+
+Or directly:
+
+cd backend && pytest -v
+
+### Run the linter
+
+make lint
+
+### Run the formatter
+
+make format
+
+### Writing New Tests
+
+Tests live in backend/tests/. Each file maps to a module:
+
+- test_routes.py   API route integration tests
+- test_ai.py       blog generation service tests  
+- test_devto.py    Dev.to publishing service tests
+
+When adding a new external API integration, add a 
+mock fixture for it in backend/tests/conftest.py 
+before writing tests. Never make real API calls 
+in tests.
+
+### Mock Fixtures Available
+
+| Fixture | What it mocks |
+|---|---|
+| mock_generate_blog | generate_blog() return value |
+| mock_post_to_platform | post_to_platform() return value |
+| mock_gemini_client | Gemini genai model directly |
+| mock_devto_request | requests.post to Dev.to |
+| mock_db | async MongoDB collection |
+
+All fixtures are in backend/tests/conftest.py.

@@ -1,5 +1,6 @@
-from elevenlabs.client import ElevenLabs
 import os
+
+from elevenlabs.client import ElevenLabs
 
 client = ElevenLabs(
     api_key=os.getenv("ELEVENLABS_API_KEY")
