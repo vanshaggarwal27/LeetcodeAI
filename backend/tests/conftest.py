@@ -25,11 +25,16 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 class FakePreferencesCollection:
     def __init__(self) -> None:
         self.update_one = AsyncMock()
+        self.find_one = AsyncMock(return_value=None)
+        self.count_documents = AsyncMock(return_value=0)
+        self.aggregate = Mock(return_value=[])
+        self.find = Mock(return_value=AsyncMock())
 
 
 class FakeDatabase:
     def __init__(self) -> None:
         self.preferences = FakePreferencesCollection()
+        self.problem_info = FakePreferencesCollection()
 
 
 class FakeMotorClient:

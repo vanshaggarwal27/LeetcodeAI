@@ -10,6 +10,7 @@ apscheduler==3.11.2
 motor==3.7.1
 pytz==2026.2
 pymongo==4.17.0
+openai==2.38.0
 
 # --- Test & Dev Dependencies ---
 pytest
