@@ -33,6 +33,31 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 });
                 }
 
+                chrome.runtime.onMessage.addListener((request) => {
+
+                if (request.type === "GENERATE_HINT") {
+
+                    fetch(`${API_BASE_URL}/generate-hint`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(request.payload)
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+
+                        chrome.runtime.sendMessage({
+                            type: "HINT_READY",
+                            hint: data.hint
+                        });
+
+                    });
+
+                 }
+
+               });
+
                 if (data.status === 'success' || data.status === 'partial_success') {
                     const platforms = data.data?.platforms || [];
                     const postedPlatforms = platforms

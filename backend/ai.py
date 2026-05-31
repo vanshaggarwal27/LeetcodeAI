@@ -348,3 +348,47 @@ def rate_code_efficiency(title: str, code: str, language: str = "python") -> dic
     raise last_error or Exception(
         "All Gemini models are currently quota-limited. Please wait a minute and try again."
     )
+
+def generate_hint(
+    title: str,
+    description: str,
+    difficulty: str,
+    hint_level: int
+) -> str:
+
+    hint_prompts = {
+        1: "Give only a direction hint. Do not reveal algorithm or code.",
+        2: "Suggest useful data structures. Do not reveal solution.",
+        3: "Explain the intuition. No code.",
+        4: "Provide pseudocode only.",
+        5: "Provide the complete optimized solution."
+    }
+
+    prompt = f"""
+    You are a LeetCode mentor.
+
+    Problem Title:
+    {title}
+
+    Problem Description:
+    {description}
+
+    Difficulty:
+    {difficulty}
+
+    Task:
+    {hint_prompts.get(hint_level, hint_prompts[1])}
+
+    Keep response concise.
+    """
+
+    api_key = os.getenv("GEMINI_API_KEY")
+
+    client = genai.Client(api_key=api_key)
+
+    response = client.models.generate_content(
+        model="models/gemini-2.5-flash",
+        contents=prompt
+    )
+
+    return response.text
