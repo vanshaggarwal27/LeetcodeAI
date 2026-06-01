@@ -33,17 +33,30 @@ class SocialSharerError(Exception):
 class BaseSocialSharer:
     platform = "base"
 
-    def share(self, title: str, post_url: str, tags: list[str]) -> SocialResult:
+    def share(
+        self,
+        title: str,
+        post_url: str,
+        tags: list[str],
+        credentials: dict[str, Any] | None = None,
+    ) -> SocialResult:
         raise NotImplementedError
 
 class TwitterSharer(BaseSocialSharer):
     platform = "twitter"
 
-    def share(self, title: str, post_url: str, tags: list[str]) -> SocialResult:
-        api_key = os.getenv("TWITTER_API_KEY")
-        api_secret = os.getenv("TWITTER_API_SECRET")
-        access_token = os.getenv("TWITTER_ACCESS_TOKEN")
-        access_secret = os.getenv("TWITTER_ACCESS_SECRET")
+    def share(
+        self,
+        title: str,
+        post_url: str,
+        tags: list[str],
+        credentials: dict[str, Any] | None = None,
+    ) -> SocialResult:
+        credentials = credentials or {}
+        api_key = credentials.get("twitter_api_key") or os.getenv("TWITTER_API_KEY")
+        api_secret = credentials.get("twitter_api_secret") or os.getenv("TWITTER_API_SECRET")
+        access_token = credentials.get("twitter_access_token") or os.getenv("TWITTER_ACCESS_TOKEN")
+        access_secret = credentials.get("twitter_access_secret") or os.getenv("TWITTER_ACCESS_SECRET")
 
         if not all([api_key, api_secret, access_token, access_secret]):
             raise SocialSharerError("Twitter API credentials missing in environment.")
@@ -74,9 +87,16 @@ class TwitterSharer(BaseSocialSharer):
 class LinkedInSharer(BaseSocialSharer):
     platform = "linkedin"
 
-    def share(self, title: str, post_url: str, tags: list[str]) -> SocialResult:
-        access_token = os.getenv("LINKEDIN_ACCESS_TOKEN")
-        person_urn = os.getenv("LINKEDIN_PERSON_URN") # e.g., urn:li:person:123456789
+    def share(
+        self,
+        title: str,
+        post_url: str,
+        tags: list[str],
+        credentials: dict[str, Any] | None = None,
+    ) -> SocialResult:
+        credentials = credentials or {}
+        access_token = credentials.get("linkedin_access_token") or os.getenv("LINKEDIN_ACCESS_TOKEN")
+        person_urn = credentials.get("linkedin_person_urn") or os.getenv("LINKEDIN_PERSON_URN") # e.g., urn:li:person:123456789
 
         if not access_token or not person_urn:
             raise SocialSharerError("LinkedIn API credentials (token or URN) missing in environment.")
@@ -137,7 +157,12 @@ SHARERS: dict[str, BaseSocialSharer] = {
     "linkedin": LinkedInSharer(),
 }
 
-def share_to_platforms(title: str, post_url: str, tags: list[str] | None = None) -> list[dict[str, Any]]:
+def share_to_platforms(
+    title: str,
+    post_url: str,
+    tags: list[str] | None = None,
+    credentials: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
     clean_tags = [
         tag.strip().lower().replace(" ", "-")
         for tag in (tags or ["leetcode", "dsa"])
@@ -150,6 +175,8 @@ def share_to_platforms(title: str, post_url: str, tags: list[str] | None = None)
         try:
             results.append(
                 sharer.share(title, post_url, clean_tags)
+                if credentials is None
+                else sharer.share(title, post_url, clean_tags, credentials)
             )
         except SocialSharerError as exc:
             results.append(

@@ -1,11 +1,17 @@
+import base64
+import hashlib
+import hmac
+import json
 import os
+import secrets
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
+from typing import Annotated, Any
 
 import motor.motor_asyncio
 import uvicorn
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -82,6 +88,262 @@ class ReminderPreference(BaseModel):
     is_opted_in: bool = True
 
 
+class AuthCredentials(BaseModel):
+    name: str | None = None
+    email: str
+    password: str
+    timezone: str = "Asia/Kolkata"
+
+
+class LoginCredentials(BaseModel):
+    email: str
+    password: str
+
+
+class UserPublic(BaseModel):
+    id: str
+    name: str
+    email: str
+    timezone: str = "Asia/Kolkata"
+
+
+class AuthResponse(BaseModel):
+    token: str
+    user: UserPublic
+
+
+class IntegrationSettings(BaseModel):
+    linkedin_access_token: str | None = None
+    linkedin_person_urn: str | None = None
+    devto_api_key: str | None = None
+    whatsapp_number: str | None = None
+    timezone: str = "Asia/Kolkata"
+    reminder_time: str = "09:00"
+    is_whatsapp_enabled: bool = False
+    ai_provider: str = "gemini"
+    gemini_api_key: str | None = None
+    openai_api_key: str | None = None
+    perplexity_api_key: str | None = None
+    publish_platforms: list[str] = ["devto"]
+
+
+class IntegrationSettingsResponse(IntegrationSettings):
+    connected: dict[str, bool]
+
+
+TOKEN_TTL_HOURS = 24 * 7
+
+
+def _secret_key() -> str:
+    return os.getenv("APP_SECRET_KEY") or "dev-only-change-me"
+
+
+def _b64url(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
+
+
+def _sign_token(payload: dict[str, Any]) -> str:
+    header = {"alg": "HS256", "typ": "JWT"}
+    encoded_header = _b64url(json.dumps(header, separators=(",", ":")).encode())
+    encoded_payload = _b64url(json.dumps(payload, separators=(",", ":")).encode())
+    signing_input = f"{encoded_header}.{encoded_payload}".encode()
+    signature = hmac.new(_secret_key().encode(), signing_input, hashlib.sha256).digest()
+    return f"{encoded_header}.{encoded_payload}.{_b64url(signature)}"
+
+
+def _decode_token(token: str) -> dict[str, Any]:
+    try:
+        encoded_header, encoded_payload, encoded_signature = token.split(".")
+        signing_input = f"{encoded_header}.{encoded_payload}".encode()
+        expected = _b64url(
+            hmac.new(_secret_key().encode(), signing_input, hashlib.sha256).digest()
+        )
+        if not hmac.compare_digest(encoded_signature, expected):
+            raise ValueError("Invalid signature")
+        padding = "=" * (-len(encoded_payload) % 4)
+        payload = json.loads(base64.urlsafe_b64decode(encoded_payload + padding))
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication token.",
+        ) from exc
+
+    if payload.get("exp", 0) < datetime.now(timezone.utc).timestamp():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication token expired.",
+        )
+    return payload
+
+
+def _hash_password(password: str, salt: str | None = None) -> tuple[str, str]:
+    salt = salt or secrets.token_hex(16)
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 120_000)
+    return salt, digest.hex()
+
+
+def _verify_password(password: str, salt: str, expected_hash: str) -> bool:
+    _, candidate_hash = _hash_password(password, salt)
+    return hmac.compare_digest(candidate_hash, expected_hash)
+
+
+def _public_user(user: dict[str, Any]) -> UserPublic:
+    return UserPublic(
+        id=user["id"],
+        name=user.get("name") or user["email"].split("@")[0],
+        email=user["email"],
+        timezone=user.get("timezone", "Asia/Kolkata"),
+    )
+
+
+async def get_current_user(
+    authorization: Annotated[str | None, Header()] = None,
+) -> dict[str, Any]:
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing bearer token.",
+        )
+
+    token = authorization.split(" ", 1)[1].strip()
+    payload = _decode_token(token)
+    user = await db.users.find_one({"id": payload["sub"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User no longer exists.",
+        )
+    return user
+
+
+async def get_optional_user(
+    authorization: Annotated[str | None, Header()] = None,
+) -> dict[str, Any] | None:
+    if not authorization:
+        return None
+    return await get_current_user(authorization)
+
+
+async def _settings_for_user(user_id: str) -> dict[str, Any]:
+    settings_doc = await db.integration_settings.find_one({"user_id": user_id}, {"_id": 0})
+    if not settings_doc:
+        return IntegrationSettings().model_dump()
+    settings_doc.pop("user_id", None)
+    return IntegrationSettings(**settings_doc).model_dump()
+
+
+def _connected(settings_doc: dict[str, Any]) -> dict[str, bool]:
+    return {
+        "devto": bool(settings_doc.get("devto_api_key")),
+        "linkedin": bool(
+            settings_doc.get("linkedin_access_token")
+            and settings_doc.get("linkedin_person_urn")
+        ),
+        "whatsapp": bool(settings_doc.get("whatsapp_number")),
+        "ai_provider": bool(
+            settings_doc.get("gemini_api_key")
+            or settings_doc.get("openai_api_key")
+            or settings_doc.get("perplexity_api_key")
+        ),
+    }
+
+
+def _token_for(user: dict[str, Any]) -> str:
+    exp = datetime.now(timezone.utc) + timedelta(hours=TOKEN_TTL_HOURS)
+    return _sign_token({"sub": user["id"], "email": user["email"], "exp": exp.timestamp()})
+
+
+@app.post("/auth/register", response_model=AuthResponse, status_code=201)
+async def register(credentials: AuthCredentials):
+    email = credentials.email.strip().lower()
+    if len(credentials.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
+    existing = await db.users.find_one({"email": email}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=409, detail="An account with this email already exists.")
+
+    salt, password_hash = _hash_password(credentials.password)
+    user = {
+        "id": secrets.token_urlsafe(16),
+        "name": (credentials.name or email.split("@")[0]).strip(),
+        "email": email,
+        "timezone": credentials.timezone,
+        "password_salt": salt,
+        "password_hash": password_hash,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.users.insert_one(user)
+    await db.integration_settings.update_one(
+        {"user_id": user["id"]},
+        {"$set": {"user_id": user["id"], **IntegrationSettings().model_dump()}},
+        upsert=True,
+    )
+    return AuthResponse(token=_token_for(user), user=_public_user(user))
+
+
+@app.post("/auth/login", response_model=AuthResponse)
+async def login(credentials: LoginCredentials):
+    email = credentials.email.strip().lower()
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+    if not user or not _verify_password(
+        credentials.password,
+        user["password_salt"],
+        user["password_hash"],
+    ):
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
+    return AuthResponse(token=_token_for(user), user=_public_user(user))
+
+
+@app.get("/auth/me", response_model=UserPublic)
+async def me(current_user: Annotated[dict[str, Any], Depends(get_current_user)]):
+    return _public_user(current_user)
+
+
+@app.get("/settings/integrations", response_model=IntegrationSettingsResponse)
+async def get_integration_settings(
+    current_user: Annotated[dict[str, Any], Depends(get_current_user)],
+):
+    settings_doc = await _settings_for_user(current_user["id"])
+    return IntegrationSettingsResponse(**settings_doc, connected=_connected(settings_doc))
+
+
+@app.put("/settings/integrations", response_model=IntegrationSettingsResponse)
+async def update_integration_settings(
+    settings: IntegrationSettings,
+    current_user: Annotated[dict[str, Any], Depends(get_current_user)],
+):
+    allowed_providers = {"gemini", "openai", "perplexity"}
+    if settings.ai_provider not in allowed_providers:
+        raise HTTPException(status_code=400, detail="Unsupported AI provider.")
+
+    settings_doc = settings.model_dump()
+    await db.integration_settings.update_one(
+        {"user_id": current_user["id"]},
+        {"$set": {"user_id": current_user["id"], **settings_doc}},
+        upsert=True,
+    )
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {"timezone": settings.timezone}},
+    )
+
+    if settings.whatsapp_number:
+        await db.preferences.update_one(
+            {"user_id": current_user["id"]},
+            {
+                "$set": {
+                    "user_id": current_user["id"],
+                    "whatsapp_number": settings.whatsapp_number,
+                    "reminder_time": settings.reminder_time,
+                    "timezone": settings.timezone,
+                    "is_opted_in": settings.is_whatsapp_enabled,
+                }
+            },
+            upsert=True,
+        )
+
+    return IntegrationSettingsResponse(**settings_doc, connected=_connected(settings_doc))
+
 
 
 
@@ -97,7 +359,10 @@ def health_check():
 # Blog Generator Endpoint
 # -----------------------------
 @app.post("/generate-blog")
-async def create_blog(problem: Problem):
+async def create_blog(
+    problem: Problem,
+    current_user: Annotated[dict[str, Any] | None, Depends(get_optional_user)] = None,
+):
     """
     Accepts a LeetCode problem and:
     1. Generates a blog using the unified ai.providers module
@@ -126,8 +391,10 @@ async def create_blog(problem: Problem):
     if not problem.code or problem.code.strip() == "":
         return {"status": "error", "message": "Code is empty, cannot generate blog."}
 
+    user_settings = await _settings_for_user(current_user["id"]) if current_user else {}
+
     try:
-        blog_content = generate_blog(problem)
+        blog_content = generate_blog(problem, credentials=user_settings)
     except Exception as e:
         return {
                 "status": "error",
@@ -138,9 +405,10 @@ async def create_blog(problem: Problem):
         platform_results = await publish_to_platforms(
             problem.title,
             blog_content,
-            platforms=problem.platforms,
+            platforms=problem.platforms or user_settings.get("publish_platforms"),
             published=not problem.publish_as_draft,
             tags=problem.tags,
+            credentials=user_settings,
         )
         successful = [r for r in platform_results if r.get("status") == "success"]
         overall_status = (
@@ -190,7 +458,8 @@ async def create_blog(problem: Problem):
                 social_results = share_to_platforms(
                     title=problem.title,
                     post_url=post_url,
-                    tags=problem.tags
+                    tags=problem.tags,
+                    credentials=user_settings,
                 )
             except Exception as e:
                 print(f"Social sharing failed: {e}")
