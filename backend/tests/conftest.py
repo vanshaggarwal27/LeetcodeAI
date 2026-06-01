@@ -105,6 +105,11 @@ class FakeCollection:
         return True
 
 
+class FakeProblemInfoCollection:
+    def __init__(self) -> None:
+        self.find_one = AsyncMock(return_value=None)
+        self.update_one = AsyncMock()
+        self.count_documents = AsyncMock(return_value=0)
 class FakeDatabase:
     def __init__(self) -> None:
         self.preferences = FakeCollection()
@@ -155,10 +160,10 @@ def app_module(monkeypatch: pytest.MonkeyPatch):
 
     for module_name in [
         "main",
-        "alerts.scheduler",
-        "alerts.progress_checker",
-        "alerts.elevenlabs_service",
-        "services.reminder_scheduler",
+        "services.scheduler_service",
+        "services.progress_service",
+        "services.twilio_service",
+        "services.elevenlabs_service",
     ]:
         sys.modules.pop(module_name, None)
 
@@ -231,15 +236,16 @@ def mock_gemini_client(mocker):
 
 @pytest.fixture
 def mock_devto_request(mocker):
-    devto_module = importlib.import_module("devto")
     response = Mock(name="devto_response")
     response.status_code = 201
     response.json.return_value = {"id": 123, "url": "https://dev.to/mock-post"}
-    request_mock = mocker.patch.object(
-        devto_module.requests,
-        "post",
-        autospec=True,
-        return_value=response,
+
+    async def fake_post(*args, **kwargs):
+        return response
+
+    request_mock = mocker.patch(
+        "httpx.AsyncClient.post",
+        side_effect=fake_post,
     )
     return {"request": request_mock, "response": response}
 

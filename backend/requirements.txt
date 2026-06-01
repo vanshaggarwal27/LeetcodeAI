@@ -2,8 +2,9 @@ fastapi
 uvicorn[standard]
 pydantic
 google-genai
-httpx
+openai
 requests
+httpx
 python-dotenv
 twilio
 elevenlabs
@@ -12,8 +13,7 @@ celery[redis]
 motor
 pytz
 pymongo
-tweepy
-openai
+tweepy==4.14.0
 
 # --- Test & Dev Dependencies ---
 pytest

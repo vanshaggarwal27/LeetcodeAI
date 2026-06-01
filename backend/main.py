@@ -12,6 +12,7 @@ import motor.motor_asyncio
 import uvicorn
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -21,7 +22,7 @@ from twilio.rest import Client
 from ai_core.blog_generator import generate_blog
 from devto import publish_to_platforms
 from models.reminder import PublishRecord
-from services.reminder_scheduler import start_scheduler
+from services.scheduler_service import start_scheduler
 from social import share_to_platforms
 
 load_dotenv()
@@ -37,6 +38,13 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"Reminder scheduler failed to start: {e}")
     yield
+    try:
+        from services.scheduler_service import scheduler
+        if scheduler.running:
+            scheduler.shutdown()
+            print("Reminder scheduler shut down successfully.")
+    except Exception as e:
+        print(f"Failed to shut down scheduler: {e}")
 
 app = FastAPI(title="LeetLog AI", version="1.0.0", lifespan=lifespan)
 
@@ -86,6 +94,7 @@ class ReminderPreference(BaseModel):
     reminder_time: str = "09:00"
     timezone: str = "Asia/Kolkata"
     is_opted_in: bool = True
+
 
 
 class AuthCredentials(BaseModel):
@@ -347,6 +356,7 @@ async def update_integration_settings(
 
 
 
+
 # -----------------------------
 # Health Check
 # -----------------------------
@@ -394,7 +404,7 @@ async def create_blog(
     user_settings = await _settings_for_user(current_user["id"]) if current_user else {}
 
     try:
-        blog_content = generate_blog(problem, credentials=user_settings)
+        blog_content = await run_in_threadpool(generate_blog, problem, credentials=user_settings)
     except Exception as e:
         return {
                 "status": "error",
@@ -566,7 +576,7 @@ def test_whatsapp():
     try:
         import os
 
-        from alerts.twilio_service import send_whatsapp_message
+        from services.twilio_service import send_whatsapp_message
         phone = os.getenv("TEST_PHONE_NUMBER")
         if not phone:
             return {"status": "error", "message": "TEST_PHONE_NUMBER is not set in environment."}
@@ -580,8 +590,8 @@ def test_call():
     try:
         import os
 
-        from alerts.elevenlabs_service import generate_audio, generate_message
-        from alerts.twilio_service import make_call
+        from services.elevenlabs_service import generate_audio, generate_message
+        from services.twilio_service import make_call
 
         message = generate_message("Vansh")
 
@@ -631,9 +641,4 @@ async def unsubscribe(data: dict):
 # Run Server
 # -----------------------------
 if __name__ == "__main__":
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=10000,
-        reload=True
-    )
+    uvicorn.run("main:app", host="0.0.0.0", port=10000, reload=True)

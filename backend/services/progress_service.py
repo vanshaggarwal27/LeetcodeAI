@@ -7,8 +7,8 @@ import motor.motor_asyncio
 import pytz
 import requests
 
-from alerts.elevenlabs_service import generate_message
-from alerts.twilio_service import send_whatsapp_message
+from services.elevenlabs_service import generate_message
+from services.twilio_service import send_whatsapp_message
 
 mongo_client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URI"))
 db = mongo_client.leetcodeai
@@ -124,8 +124,8 @@ async def _send_alert(user: dict) -> None:
     await asyncio.to_thread(send_whatsapp_message, phone, message)
 
     try:
-        from alerts.elevenlabs_service import generate_audio
-        from alerts.twilio_service import make_call
+        from services.elevenlabs_service import generate_audio
+        from services.twilio_service import make_call
 
         try:
             audio_file = await asyncio.to_thread(generate_audio, message)
