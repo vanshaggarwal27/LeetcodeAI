@@ -209,8 +209,7 @@ async def create_blog(problem: Problem):
             "platforms": platform_results,
             "social": social_results,
         },
-    }
-    
+    }  
 @app.post("/generate-hint")
 async def generate_hint_api(request: HintRequest):
 
