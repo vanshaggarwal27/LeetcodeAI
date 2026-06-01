@@ -78,10 +78,10 @@ def app_module(monkeypatch: pytest.MonkeyPatch):
 
     for module_name in [
         "main",
-        "alerts.scheduler",
-        "alerts.progress_checker",
-        "alerts.elevenlabs_service",
-        "services.reminder_scheduler",
+        "services.scheduler",
+        "services.progress_checker",
+        "services.twilio_service",
+        "services.elevenlabs_service",
     ]:
         sys.modules.pop(module_name, None)
 

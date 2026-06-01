@@ -1,4 +1,5 @@
 import os
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 
 import motor.motor_asyncio
@@ -15,12 +16,30 @@ from twilio.rest import Client
 from ai_core.blog_generator import generate_blog
 from devto import publish_to_platforms
 from models.reminder import PublishRecord
-from services.reminder_scheduler import start_scheduler
+from services.scheduler import start_scheduler
 from social import share_to_platforms
 
 load_dotenv()
 
-app = FastAPI(title="LeetLog AI", version="1.0.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        start_scheduler()
+        print("Reminder scheduler started successfully.")
+    except Exception as e:
+        print(f"Reminder scheduler failed to start: {e}")
+    yield
+    try:
+        from services.scheduler import scheduler
+        if scheduler.running:
+            scheduler.shutdown()
+            print("Reminder scheduler shut down successfully.")
+    except Exception as e:
+        print(f"Failed to shut down scheduler: {e}")
+
+
+app = FastAPI(title="LeetLog AI", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -70,19 +89,6 @@ class ReminderPreference(BaseModel):
     is_opted_in: bool = True
 
 
-# -----------------------------
-# Startup Event
-# -----------------------------
-@app.on_event("startup")
-async def startup_event():
-    """
-    Start background schedulers when server starts.
-    """
-    try:
-        start_scheduler()
-        print("Reminder scheduler started successfully.")
-    except Exception as e:
-        print(f"Reminder scheduler failed to start: {e}")
 
 
 # -----------------------------
@@ -298,7 +304,7 @@ def test_whatsapp():
     try:
         import os
 
-        from alerts.twilio_service import send_whatsapp_message
+        from services.twilio_service import send_whatsapp_message
         phone = os.getenv("TEST_PHONE_NUMBER")
         if not phone:
             return {"status": "error", "message": "TEST_PHONE_NUMBER is not set in environment."}
@@ -312,8 +318,8 @@ def test_call():
     try:
         import os
 
-        from alerts.elevenlabs_service import generate_audio, generate_message
-        from alerts.twilio_service import make_call
+        from services.elevenlabs_service import generate_audio, generate_message
+        from services.twilio_service import make_call
 
         message = generate_message("Vansh")
 

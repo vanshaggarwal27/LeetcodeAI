@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 
 import motor.motor_asyncio
 
-from alerts.elevenlabs_service import generate_message
-from alerts.twilio_service import send_whatsapp_message
+from services.elevenlabs_service import generate_message
+from services.twilio_service import send_whatsapp_message
 
 # Setup sync-to-async MongoDB connection
 mongo_client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URI"))
@@ -84,8 +84,8 @@ async def _check_unsolved_users_async():
 
             try:
                 # 1. Try to Generate Audio via ElevenLabs
-                from alerts.elevenlabs_service import generate_audio
-                from alerts.twilio_service import make_call
+                from services.elevenlabs_service import generate_audio
+                from services.twilio_service import make_call
 
                 print("Generating audio via ElevenLabs...")
                 try:
