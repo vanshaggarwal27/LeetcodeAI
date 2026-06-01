@@ -16,7 +16,7 @@ from twilio.rest import Client
 from ai_core.blog_generator import generate_blog
 from devto import publish_to_platforms
 from models.reminder import PublishRecord
-from services.scheduler import start_scheduler
+from services.scheduler_service import start_scheduler
 from social import share_to_platforms
 
 load_dotenv()
@@ -31,7 +31,7 @@ async def lifespan(app: FastAPI):
         print(f"Reminder scheduler failed to start: {e}")
     yield
     try:
-        from services.scheduler import scheduler
+        from services.scheduler_service import scheduler
         if scheduler.running:
             scheduler.shutdown()
             print("Reminder scheduler shut down successfully.")
