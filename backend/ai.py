@@ -27,6 +27,8 @@ def _difficulty_badge(difficulty: str) -> str:
     return badges.get(difficulty, f"⚪ {difficulty}")
 
 
+def _build_prompt(problem, current_time: str) -> str:
+    """
     Builds a structured prompt for Gemini AI using LeetCode problem details,
     solution code, author information, and optional custom instructions.
 

@@ -1,7 +1,7 @@
 import asyncio
 
-from services.progress_service import check_user_progress_and_alert
 from celery_app import celery_app
+from services.progress_service import check_user_progress_and_alert
 
 
 @celery_app.task(
