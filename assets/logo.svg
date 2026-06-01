@@ -1,0 +1,155 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="#0B0D12"/>
+
+  <!-- ICON -->
+  <g transform="translate(250 180)">
+
+    <!-- Brain Outline -->
+    <path
+      d="
+      M180 80
+      C130 80 95 115 95 160
+      C60 175 40 205 40 245
+      C40 300 78 340 130 348
+      C138 392 170 425 215 425
+      "
+      stroke="#D4A64A"
+      stroke-width="16"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+    />
+
+    <!-- Brain Curves -->
+    <path
+      d="M145 125 C120 140 118 175 145 190"
+      stroke="#D4A64A"
+      stroke-width="14"
+      stroke-linecap="round"
+      fill="none"
+    />
+
+    <path
+      d="M130 235 C105 250 105 285 130 300"
+      stroke="#D4A64A"
+      stroke-width="14"
+      stroke-linecap="round"
+      fill="none"
+    />
+
+    <path
+      d="M205 160 C230 175 230 205 205 220"
+      stroke="#D4A64A"
+      stroke-width="14"
+      stroke-linecap="round"
+      fill="none"
+    />
+
+    <path
+      d="M200 305 C225 320 225 350 200 365"
+      stroke="#D4A64A"
+      stroke-width="14"
+      stroke-linecap="round"
+      fill="none"
+    />
+
+    <!-- Divider -->
+    <line
+      x1="260"
+      y1="70"
+      x2="260"
+      y2="430"
+      stroke="#D4A64A"
+      stroke-width="16"
+      stroke-linecap="round"
+    />
+
+    <!-- Terminal Bracket -->
+    <path
+      d="
+      M320 120
+      H355
+      V385
+      H320
+      "
+      stroke="#D4A64A"
+      stroke-width="16"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+    />
+
+    <!-- Data Lines -->
+    <circle cx="385" cy="150" r="7" fill="#D4A64A"/>
+    <line
+      x1="405"
+      y1="150"
+      x2="520"
+      y2="150"
+      stroke="#D4A64A"
+      stroke-width="14"
+      stroke-linecap="round"
+    />
+
+    <circle cx="385" cy="220" r="7" fill="#D4A64A"/>
+    <line
+      x1="405"
+      y1="220"
+      x2="560"
+      y2="220"
+      stroke="#D4A64A"
+      stroke-width="14"
+      stroke-linecap="round"
+    />
+
+    <circle cx="385" cy="290" r="7" fill="#D4A64A"/>
+    <line
+      x1="405"
+      y1="290"
+      x2="520"
+      y2="290"
+      stroke="#D4A64A"
+      stroke-width="14"
+      stroke-linecap="round"
+    />
+
+    <circle cx="385" cy="360" r="7" fill="#D4A64A"/>
+    <line
+      x1="405"
+      y1="360"
+      x2="550"
+      y2="360"
+      stroke="#D4A64A"
+      stroke-width="14"
+      stroke-linecap="round"
+    />
+
+    <!-- Arrow -->
+    <path
+      d="M285 240 L320 270 L285 300"
+      stroke="#D4A64A"
+      stroke-width="14"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+    />
+
+  </g>
+
+  <!-- BRAND NAME -->
+  <text
+    x="512"
+    y="820"
+    text-anchor="middle"
+    font-family="Inter, Poppins, Helvetica, Arial, sans-serif"
+    font-size="92"
+    font-weight="400"
+    letter-spacing="1"
+  >
+    <tspan fill="#F5F7FA">LeetLog </tspan>
+    <tspan fill="#D4A64A" font-weight="600">AI</tspan>
+  </text>
+
+</svg>

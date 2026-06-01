@@ -10,9 +10,9 @@ load_dotenv()
 
 class PerplexityProvider(AIProvider):
 
-    def __init__(self):
+    def __init__(self, api_key: str | None = None):
 
-        api_key = os.getenv("PERPLEXITY_API_KEY")
+        api_key = api_key or os.getenv("PERPLEXITY_API_KEY")
 
 
         if not api_key:

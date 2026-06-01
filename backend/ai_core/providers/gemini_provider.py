@@ -23,8 +23,8 @@ INITIAL_BACKOFF_SECONDS = 35
 
 class GeminiProvider(AIProvider):
 
-    def __init__(self):
-        api_key = os.getenv("GEMINI_API_KEY")
+    def __init__(self, api_key: str | None = None):
+        api_key = api_key or os.getenv("GEMINI_API_KEY")
 
         if not api_key:
             raise Exception("GEMINI_API_KEY is missing")

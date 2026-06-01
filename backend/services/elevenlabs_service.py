@@ -11,7 +11,7 @@ def get_elevenlabs_client():
     return ElevenLabs(api_key=api_key)
 
 def generate_message(user_name: str):
-    return "6 Lakh ki mehnat krke 35 Lakh ke sapne nhi dekhe jate, DSA Solve kar chl"
+    return f"Aye {user_name}! 6 Lakh ki mehnat krke 35 Lakh ke sapne nhi dekhe jate, DSA Solve kar chl"
 
 def generate_audio(text: str) -> str:
     """Generates audio and saves it to static/reminder.mp3. Returns the file path."""

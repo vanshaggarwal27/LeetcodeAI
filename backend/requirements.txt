@@ -9,9 +9,11 @@ python-dotenv
 twilio
 elevenlabs
 apscheduler
+celery[redis]
 motor
 pytz
 pymongo
+tweepy==4.14.0
 
 # --- Test & Dev Dependencies ---
 pytest
@@ -19,4 +21,3 @@ pytest-asyncio
 pytest-mock
 responses
 ruff
-tweepy==4.14.0

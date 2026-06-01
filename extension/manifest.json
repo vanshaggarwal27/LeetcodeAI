@@ -3,6 +3,11 @@
   "name": "LeetLog AI",
   "version": "1.0.1",
   "description": "Auto-generate and publish LeetCode blogs across multiple platforms using Gemini",
+  "icons": {
+    "16": "logo.png",
+    "48": "logo.png",
+    "128": "logo.png"
+  },
   "permissions": [
     "activeTab",
     "scripting",
@@ -28,6 +33,11 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "logo.png",
+      "48": "logo.png",
+      "128": "logo.png"
+    }
   }
 }

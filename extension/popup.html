@@ -80,6 +80,23 @@
             transform: none;
         }
         
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .button-group button {
+            flex: 1;
+            margin-top: 0;
+        }
+        #copyBtn {
+            background-color: #2c3e50;
+            box-shadow: 0 4px 6px rgba(44, 62, 80, 0.2);
+        }
+        #copyBtn:hover {
+            background-color: #1a2632;
+        }
+        
         #status { 
             margin-top: 18px; 
             font-weight: 600; 
@@ -187,7 +204,11 @@
         </label>
     </fieldset>
     
-    <button id="generateBtn">Generate Blog</button>
+    <!-- Button Group: Generate + Copy -->
+    <div class="button-group">
+        <button id="generateBtn">📝 Generate Blog</button>
+        <button id="copyBtn">📋 Copy Blog</button>
+    </div>
 
     <div id="previewSection"
      style="display:none; margin-top:16px;">
@@ -252,12 +273,11 @@
     </div>
     
     <div id="status">Ready to blog! 🚀</div>
-
     <details id="historySection" style="margin-top:14px; text-align:left;">
         <summary style="cursor:pointer; font-size:12px; font-weight:700; text-transform:uppercase; color:var(--text-small); padding:6px 0; user-select:none;">📋 Recent Posts</summary>
         <div id="historyList" style="margin-top:8px; max-height:160px; overflow-y:auto;"></div>
     </details>
-<button id="dashboardBtn" style="margin-top:8px;background:#1a1a2e;font-size:13px;padding:10px;color:#f7a01a;width:100%;border-radius:8px;cursor:pointer;border:1px solid #f7a01a;">📊 View Dashboard</button>    
+    <button id="dashboardBtn" style="margin-top:8px;background:#1a1a2e;font-size:13px;padding:10px;color:#f7a01a;width:100%;border-radius:8px;cursor:pointer;border:1px solid #f7a01a;">📊 View Dashboard</button>
     <div class="footer">
         Powered by Gemini & LeetLog AI
     </div>

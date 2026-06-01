@@ -126,6 +126,15 @@ HASHNODE_PUBLICATION_ID=your_hashnode_publication_id_here
 MEDIUM_TOKEN=your_medium_integration_token_here
 MEDIUM_USER_ID=your_medium_user_id_here
 BLOG_WEBHOOK_URL=https://your-blog.example.com/api/publish
+MONGODB_URI=your_mongodb_connection_string
+MongoDB is required for the project to run.
+
+You can either:
+
+1. Use MongoDB Atlas (cloud)
+2. Run locally using Docker:
+
+docker run -d -p 27017:27017 --name mongodb mongo
 ```
 
 Where to get your keys:
@@ -165,9 +174,9 @@ To test the extension against your local server:
 4. Select the `extension/` folder from the cloned repo
 
 > The extension in `background.js` points to the deployed Render URL by default.
-> For local testing, temporarily change `API_URL` in `background.js`:
+> For local testing, temporarily change `API_BASE_URL` in `background.js` 
 > ```js
-> const API_URL = "http://localhost:10000/generate-blog";
+> const API_BASE_URL = "http://localhost:10000";
 > ```
 
 ---

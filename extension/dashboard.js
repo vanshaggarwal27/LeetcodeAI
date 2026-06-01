@@ -1,6 +1,28 @@
 const API_BASE_URL = "https://leetcodeai-backend.onrender.com";
 
+//fixes timezone for IST and all non-UTC users
+function getLocalDateStr(date) {
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 const colors = { devto:'#3b49df', hashnode:'#2962ff', medium:'#00ab6c', webhook:'#f7a01a' };
+
+function escapeHTML(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>'"]/g, 
+    tag => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;'
+    }[tag] || tag)
+  );
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   setLoading(true);
@@ -53,7 +75,7 @@ function calculateStreakFromWeekMap(weekMap) {
   for (let i = 0; i < 7; i++) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
+    const key = getLocalDateStr(d);
     if (weekMap[key]) streak++;
     else if (i > 0) break; 
   }
@@ -67,7 +89,7 @@ function renderWeekGridFromMap(weekMap) {
   grid.innerHTML = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
-    const key = d.toISOString().slice(0, 10);
+    const key = getLocalDateStr(d);
     const count = weekMap[key] || 0;
     return `<div class="week-day">
       <div class="week-label">${days[d.getDay()]}</div>
@@ -86,7 +108,7 @@ function renderPlatformBarsFromMap(counts) {
   const max = Math.max(...entries.map(e => e[1]));
   container.innerHTML = entries.map(([name, count]) => `
     <div class="platform-bar">
-      <span class="platform-name">${name}</span>
+      <span class="platform-name">${escapeHTML(name)}</span>
       <div class="bar-track">
         <div class="bar-fill" style="width:${(count/max)*100}%;background:${colors[name]||'#f7a01a'}"></div>
       </div>
@@ -104,7 +126,7 @@ function renderDashboard(history) {
   renderHistory(history);
 }
 
-function getDateStr(d) { return new Date(d).toISOString().slice(0, 10); }
+function getDateStr(d) { return getLocalDateStr(new Date(d)); }
 
 function calculateStreak(history) {
   if (!history.length) return 0;
@@ -128,7 +150,7 @@ function renderWeekGrid(history) {
   const grid = document.getElementById('weekGrid');
   grid.innerHTML = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(); d.setDate(d.getDate() - (6 - i));
-    const key = d.toISOString().slice(0, 10);
+    const key = getLocalDateStr(d);
     const count = history.filter(h => getDateStr(h.date) === key).length;
     return `<div class="week-day">
       <div class="week-label">${days[d.getDay()]}</div>
@@ -153,8 +175,8 @@ function renderHistory(history) {
     const dateStr = new Date(h.date).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
     return `<div class="history-item">
       <div>
-        <div class="history-title">${h.title || 'Unknown Problem'}</div>
-        <div class="history-platforms"> ${(h.platforms||[]).join(', ') || 'unknown'}</div>
+        <div class="history-title">${escapeHTML(h.title || 'Unknown Problem')}</div>
+        <div class="history-platforms"> ${escapeHTML((h.platforms||[]).join(', ') || 'unknown')}</div>
       </div>
       <div class="history-date">${dateStr}</div>
     </div>`;
