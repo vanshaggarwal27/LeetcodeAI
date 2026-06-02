@@ -1,13 +1,15 @@
 import asyncio
 import os
-from datetime import datetime, timezone
+from datetime import datetime, time, timezone  # noqa: F401
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError  # noqa: F401
 
 import motor.motor_asyncio
+import pytz  # noqa: F401
+import requests
 
 from alerts.elevenlabs_service import generate_message
 from alerts.twilio_service import send_whatsapp_message
 
-# Setup sync-to-async MongoDB connection
 mongo_client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URI"))
 db = mongo_client.leetcodeai
 
@@ -29,8 +31,6 @@ async def process_single_user(user, today):
     lc_username = user.get("leetcode_username", "vanshaggarwal27")
     if not has_solved and lc_username:
         try:
-            import requests
-
             def check_lc():
                 query = """
                 query($username: String!, $limit: Int!) {

@@ -8,6 +8,7 @@ python-dotenv
 twilio
 elevenlabs
 apscheduler
+celery[redis]
 motor
 pytz
 pymongo
