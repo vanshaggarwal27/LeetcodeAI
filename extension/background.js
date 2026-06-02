@@ -1,16 +1,33 @@
 const API_BASE_URL = "https://leetcodeai-backend.onrender.com";
+//const API_BASE_URL = "http://localhost:10000";
+function getUserEmail() {
+    return new Promise(resolve => {
+        chrome.storage.local.get({ userEmail: null }, ({ userEmail }) => resolve(userEmail));
+    });
+}
+
+function getUserEmail() {
+    return new Promise(resolve => {
+        chrome.storage.local.get({ userEmail: null }, ({ userEmail }) => resolve(userEmail));
+    });
+}
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'GENERATE_BLOG') {
-        const { title, description, code, author, client_time, custom_prompt } = request.payload;
+        const { title, description, code, author, client_time, custom_prompt, difficulty } = request.payload;
         chrome.storage.local.get({
             publishingPlatforms: ['devto'],
-            publishAsDraft: false
-        }, ({ publishingPlatforms, publishAsDraft }) => {
+            publishAsDraft: false,
+            userEmail: null,
+        }, async ({ publishingPlatforms, publishAsDraft, userEmail }) => {
+            if (!userEmail) {
+                chrome.runtime.sendMessage({ type: 'STATUS_UPDATE', message: 'Please set your email in the extension settings before publishing.', status: 'error' });
+                return;
+            }
             fetch(`${API_BASE_URL}/generate-blog`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", "X-User-Email": userEmail },
                 body: JSON.stringify({
-                    title, description, code, author, client_time, custom_prompt,
+                    title, description, code, author, client_time, custom_prompt, difficulty,
                     platforms: publishingPlatforms,
                     publish_as_draft: publishAsDraft
                 })
@@ -59,30 +76,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         date: client_time || new Date().toISOString(),
                         platforms: postedPlatforms,
                         status: data.status,
-                        author
+                        author,
+                        user_email: userEmail,
                     };
  
-                    chrome.storage.local.get({ publishHistory: [] }, (res) => {
-
-                    const history =
-                        res.publishHistory.filter(
-                            h => h.title !== entry.title
-                        );
-
-                    history.unshift(entry);
-
-                    chrome.storage.local.set({
-                        publishHistory:
-                            history.slice(0, 100)
+                    const historyKey = `publishHistory_${userEmail}`;
+                    chrome.storage.local.get({ [historyKey]: [] }, (res) => {
+                        const history = (res[historyKey] || []).filter(h => h.title !== entry.title);
+                        history.unshift(entry);
+                        chrome.storage.local.set({ [historyKey]: history.slice(0, 100) });
                     });
-                });
  
                     fetch(`${API_BASE_URL}/dashboard/record`, {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
+                        headers: { "Content-Type": "application/json", "X-User-Email": userEmail },
                         body: JSON.stringify(entry)
-                    }).catch(() => {
-                    });
+                    }).catch(() => {});
                     chrome.runtime.sendMessage({
                         type: 'STATUS_UPDATE',
                         message:

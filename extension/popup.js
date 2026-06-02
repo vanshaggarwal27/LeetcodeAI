@@ -1,3 +1,55 @@
+// ── Email setup ──────────────────────────────────────────────
+const MAIN_IDS = ['generateBtn','copyBtn','customPrompt',
+    '.input-group','.platform-panel','#exportSection',
+    '#previewSection','#progressContainer','#status','#dashboardBtn',
+    '.footer','h2','p'];
+
+function showEmailSetup() {
+    document.getElementById('emailSetup').style.display = 'flex';
+    document.getElementById('userBadge').style.display = 'none';
+    // hide main content while setup is shown
+    ['generateBtn','copyBtn','dashboardBtn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+    document.querySelectorAll('.input-group, .platform-panel, .button-group, .footer, #status, #exportSection, #previewSection, #progressContainer, h2, body > p')
+        .forEach(el => el.style.display = 'none');
+}
+
+function showMainUI(email) {
+    document.getElementById('emailSetup').style.display = 'none';
+    const badge = document.getElementById('userBadge');
+    badge.style.display = 'flex';
+    document.getElementById('userEmailDisplay').textContent = email;
+    // restore main content
+    ['generateBtn','copyBtn','dashboardBtn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = '';
+    });
+    document.querySelectorAll('.input-group, .platform-panel, .button-group, .footer, #status, h2, body > p')
+        .forEach(el => el.style.display = '');
+}
+
+document.getElementById('saveEmailBtn').addEventListener('click', () => {
+    const input = document.getElementById('emailInput');
+    const email = input.value.trim();
+    if (!email || !email.includes('@')) {
+        input.classList.add('invalid');
+        return;
+    }
+    input.classList.remove('invalid');
+    chrome.storage.local.set({ userEmail: email }, () => showMainUI(email));
+});
+
+document.getElementById('emailInput').addEventListener('input', function() {
+    this.classList.remove('invalid');
+});
+
+document.getElementById('changeEmailBtn').addEventListener('click', () => {
+    chrome.storage.local.remove('userEmail', showEmailSetup);
+});
+// ─────────────────────────────────────────────────────────────
+
 let generatedBlogMarkdown = "";
 let generatedProblemTitle = "";
 let generatedBlog = "";
@@ -135,6 +187,12 @@ async function copyBlogToClipboard() {
 // ================================================
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Check email on every open
+    chrome.storage.local.get({ userEmail: null }, ({ userEmail }) => {
+        if (userEmail) showMainUI(userEmail);
+        else showEmailSetup();
+    });
+
 
     const statusEl = document.getElementById('status');
     const platformInputs = Array.from(document.querySelectorAll('input[name="platform"]'));
