@@ -13,7 +13,7 @@ db = mongo_client.leetcodeai
 
 
 async def process_single_user(user, today):
-    """Worker function to process progress checking and alerts for a single user concurrently."""
+    """Worker function to process progress checking and alerts for a single user."""
     phone = user.get("whatsapp_number")
     if not phone:
         return
@@ -113,7 +113,7 @@ async def _check_unsolved_users_async():
 
     # Create an asynchronous task for every user execution
     tasks = [process_single_user(user, today) for user in users]
-    
+
     # Run all checks and API interactions concurrently
     await asyncio.gather(*tasks)
 
