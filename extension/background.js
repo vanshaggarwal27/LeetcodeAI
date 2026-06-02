@@ -53,7 +53,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 if (data.status === 'success' || data.status === 'partial_success') {
                     const platforms = data.data?.platforms || [];
                     const postedPlatforms = platforms
-                        .filter(r => r.status === 'success').map(r => r.platform);
+                        .filter(result => result.status === 'success')
+                        .map(result => result.platform)
+                        .join(', ');
+                        const devtoResult = platforms.find(r => r.platform === 'devto' && r.status === 'success');
+                        chrome.storage.local.get({ publishHistory: [] }, (res) => {
+                            const entry = {
+                                title: title,
+                                url: devtoResult?.url || null,
+                                publishedAt: client_time || new Date().toISOString(),
+                                platforms: postedPlatforms ? postedPlatforms.split(', ').filter(p => p) : []
+                            };
+                            const history = res.publishHistory;
+                            history.unshift(entry);
+                            chrome.storage.local.set({ publishHistory: history.slice(0, 10) });
+                        });
                     const failedPlatforms = platforms
                         .filter(r => r.status === 'error').map(r => r.platform);
  

@@ -4,7 +4,7 @@ import pytest
 
 
 def test_due_timezones_includes_local_11pm_zone():
-    from alerts.progress_checker import due_timezones
+    from services.progress_service import due_timezones
 
     zones = due_timezones(datetime(2026, 1, 1, 17, 30, tzinfo=timezone.utc))
 
@@ -13,7 +13,7 @@ def test_due_timezones_includes_local_11pm_zone():
 
 @pytest.mark.asyncio
 async def test_find_due_reminder_users_filters_by_timezone(app_module):
-    from alerts import progress_checker
+    from services import progress_service
 
     app_module.db.preferences.records.extend(
         [
@@ -31,9 +31,9 @@ async def test_find_due_reminder_users_filters_by_timezone(app_module):
             },
         ]
     )
-    progress_checker.db = app_module.db
+    progress_service.db = app_module.db
 
-    users = await progress_checker.find_due_reminder_users(
+    users = await progress_service.find_due_reminder_users(
         datetime(2026, 1, 1, 17, 30, tzinfo=timezone.utc)
     )
 
@@ -42,7 +42,7 @@ async def test_find_due_reminder_users_filters_by_timezone(app_module):
 
 @pytest.mark.asyncio
 async def test_enqueue_due_reminders_dedupes_jobs(app_module, mocker):
-    from alerts import progress_checker
+    from services import progress_service
 
     app_module.db.preferences.records.append(
         {
@@ -52,7 +52,7 @@ async def test_enqueue_due_reminders_dedupes_jobs(app_module, mocker):
             "whatsapp_number": "+911234567890",
         }
     )
-    progress_checker.db = app_module.db
+    progress_service.db = app_module.db
 
     task = mocker.patch(
         "tasks.reminder_tasks.check_user_progress_and_alert_task.delay",
@@ -60,8 +60,8 @@ async def test_enqueue_due_reminders_dedupes_jobs(app_module, mocker):
     )
 
     now = datetime(2026, 1, 1, 17, 30, tzinfo=timezone.utc)
-    first = await progress_checker.enqueue_due_reminders(now)
-    second = await progress_checker.enqueue_due_reminders(now)
+    first = await progress_service.enqueue_due_reminders(now)
+    second = await progress_service.enqueue_due_reminders(now)
 
     assert first["queued"] == 1
     assert second["queued"] == 0
