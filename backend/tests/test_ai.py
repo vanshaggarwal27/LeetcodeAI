@@ -14,6 +14,7 @@ load_dotenv()
 # Provider tests
 # ---------------------------
 
+
 @pytest.mark.parametrize(
     "provider_name",
     ["gemini", "openai", "perplexity"],
@@ -29,7 +30,9 @@ def test_provider_generation(monkeypatch, provider_name):
     manager = ProviderManager()
 
     # Simulate a fast, valid response containing "Python"
-    mock_response = f"Python is a great programming language powered by {provider_name}."
+    mock_response = (
+        f"Python is a great programming language powered by {provider_name}."
+    )
     monkeypatch.setattr(manager, "generate", lambda prompt: mock_response)
 
     response = manager.generate("Write one short sentence about Python.")
@@ -51,6 +54,7 @@ def test_provider_generation(monkeypatch, provider_name):
 # Lets dont waste lot of credits so insted only gentare tittles
 # ---------------------------
 
+
 def test_blog_generation_contains_title(monkeypatch):
     problem = SimpleNamespace(
         title="Unique Problem Title XYZ",
@@ -64,7 +68,7 @@ def test_blog_generation_contains_title(monkeypatch):
     monkeypatch.setattr(
         ProviderManager,
         "generate",
-        lambda self, prompt: "Mocked blog content about Unique Problem Title XYZ"
+        lambda self, prompt: "Mocked blog content about Unique Problem Title XYZ",
     )
 
     result = generate_blog(problem)

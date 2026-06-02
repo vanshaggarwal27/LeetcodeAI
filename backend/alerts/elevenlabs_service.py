@@ -10,8 +10,10 @@ def get_elevenlabs_client():
         return None
     return ElevenLabs(api_key=api_key)
 
+
 def generate_message(user_name: str):
     return f"Aye {user_name}! 6 Lakh ki mehnat krke 35 Lakh ke sapne nhi dekhe jate, DSA Solve kar chl"
+
 
 def generate_audio(text: str) -> str:
     """Generates audio and saves it to static/reminder.mp3. Returns the file path."""
@@ -21,7 +23,7 @@ def generate_audio(text: str) -> str:
 
     # Resolve voice ID dynamically
     target_voice_name = "Anya"
-    selected_voice_id = "21m00Tcm4TlvDq8ikWAM" # Fallback Rachel
+    selected_voice_id = "21m00Tcm4TlvDq8ikWAM"  # Fallback Rachel
     try:
         voices = client.voices.get_all().voices
         for v in voices:

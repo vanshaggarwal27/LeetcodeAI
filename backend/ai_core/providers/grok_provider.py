@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class GrokProvider(AIProvider):
-
     def __init__(self):
         self.api_key = os.getenv("XAI_API_KEY")
 
@@ -71,11 +70,7 @@ class GrokProvider(AIProvider):
 
             data = response.json()
 
-            content = (
-                data.get("choices", [{}])[0]
-                .get("message", {})
-                .get("content")
-            )
+            content = data.get("choices", [{}])[0].get("message", {}).get("content")
 
             if not content:
                 raise Exception("Empty response from Grok API")

@@ -151,9 +151,68 @@
             margin-top: 10px;
             padding-top: 10px;
         }
+                /* ── Email setup screen ── */
+        #emailSetup {
+            display: none;
+            flex-direction: column;
+            gap: 14px;
+            padding: 10px 0;
+        }
+        #emailSetup h3 { font-size: 16px; font-weight: 700; color: #1a1a1a; margin: 0; }
+        #emailSetup p  { font-size: 12px; color: var(--text-small); margin: 0; line-height: 1.5; }
+        #emailInput {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        #emailInput:focus { border-color: var(--primary); }
+        #emailInput.invalid { border-color: var(--error); }
+        .email-hint { font-size: 10px; color: var(--text-small); margin-top: -8px; }
+ 
+        /* ── User badge shown in main UI ── */
+        #userBadge {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-small);
+            background: #f5f5f5;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 10px;
+            margin-bottom: 4px;
+        }
+        #userBadge span { font-weight: 600; color: var(--text); }
+        #changeEmailBtn {
+            width: auto; padding: 2px 8px; font-size: 10px;
+            background: transparent; color: var(--text-small);
+            border: 1px solid var(--border); box-shadow: none;
+            font-weight: 600; border-radius: 4px;
+        }
+        #changeEmailBtn:hover { background: #eee; }
     </style>
 </head>
 <body>
+        <!-- ── Email setup (shown on first launch) ── -->
+    <div id="emailSetup">
+        <h3>👋 Welcome to LeetLog AI</h3>
+        <p>Enter your email so your stats are saved separately from other users.</p>
+        <input type="email" id="emailInput" placeholder="you@example.com" />
+        <p class="email-hint">Stored locally and only used to identify your data on the backend.</p>
+        <button id="saveEmailBtn">Continue →</button>
+    </div>
+ 
+    <!-- ── User badge (shown in main UI) ── -->
+    <div id="userBadge">
+        Logged in as <span id="userEmailDisplay">—</span>
+        <button id="changeEmailBtn">Change</button>
+    </div>
+
     <h2>LeetLog AI</h2>
     <p>Generate a professional Dev.to blog post for your current LeetCode problem instantly.</p>
     <div class="input-group">

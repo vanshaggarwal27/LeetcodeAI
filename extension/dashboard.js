@@ -1,4 +1,5 @@
 const API_BASE_URL = "https://leetcodeai-backend.onrender.com";
+//const API_BASE_URL = "http://localhost:10000";
 
 //fixes timezone for IST and all non-UTC users
 function getLocalDateStr(date) {
@@ -25,17 +26,25 @@ function escapeHTML(str) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  setLoading(true);
-  fetchStatsFromBackend()
-    .catch(() => {
-      showBanner("Couldn't reach backend — showing local data.");
-      return loadFromLocalStorage();
-    })
-    .finally(() => setLoading(false));
+  chrome.storage.local.get({ userEmail: null }, ({ userEmail }) => {
+    if (!userEmail) {
+      showBanner('No email set — open the extension and enter your email first.');
+      return;
+    }
+    setLoading(true);
+    fetchStatsFromBackend(userEmail)
+      .catch(() => {
+        showBanner("Couldn't reach backend — showing local data.");
+        return loadFromLocalStorage(userEmail);
+      })
+      .finally(() => setLoading(false));
+  });
 });
 
-async function fetchStatsFromBackend() {
-  const res = await fetch(`${API_BASE_URL}/dashboard/stats`);
+async function fetchStatsFromBackend(email) {
+  const res = await fetch(`${API_BASE_URL}/dashboard/stats`, {
+    headers: { 'X-User-Email': email }
+  });
   if (!res.ok) throw new Error('Bad response');
   const { total_posts, platform_counts, week_activity, recent } = await res.json();
 
@@ -50,10 +59,11 @@ async function fetchStatsFromBackend() {
   renderHistory(recent);
 }
 
-function loadFromLocalStorage() {
+function loadFromLocalStorage(email) {
   return new Promise(resolve => {
-    chrome.storage.local.get({ publishHistory: [] }, ({ publishHistory }) => {
-      renderDashboard(publishHistory);
+    const key = `publishHistory_${email}`;
+    chrome.storage.local.get({ [key]: [] }, (res) => {
+      renderDashboard(res[key] || []);
       resolve();
     });
   });

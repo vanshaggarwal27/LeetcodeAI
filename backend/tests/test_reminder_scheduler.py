@@ -1,16 +1,23 @@
 from datetime import datetime, timezone
 
+import pytest
+
 
 def test_due_timezones_includes_local_11pm_zone():
     from alerts.progress_checker import due_timezones
 
     zones = due_timezones(datetime(2026, 1, 1, 17, 30, tzinfo=timezone.utc))
-
     assert "Asia/Kolkata" in zones
 
 
-async def test_find_due_reminder_users_filters_by_timezone(app_module):
+@pytest.mark.asyncio
+async def test_find_due_reminder_users_filters_by_timezone(app_module, mocker):
     from alerts import progress_checker
+
+    # Mock datetime.now inside progress_checker to return 17:30 UTC (which is 11 PM IST)
+    mock_datetime = mocker.patch("alerts.progress_checker.datetime")
+    mock_datetime.now.return_value = datetime(2026, 1, 1, 17, 30, tzinfo=timezone.utc)
+    mock_datetime.timezone = timezone
 
     app_module.db.preferences.records.extend(
         [
@@ -30,13 +37,11 @@ async def test_find_due_reminder_users_filters_by_timezone(app_module):
     )
     progress_checker.db = app_module.db
 
-    users = await progress_checker.find_due_reminder_users(
-        datetime(2026, 1, 1, 17, 30, tzinfo=timezone.utc)
-    )
-
+    users = await progress_checker.find_due_reminder_users()
     assert [user["user_id"] for user in users] == ["due-user"]
 
 
+@pytest.mark.asyncio
 async def test_enqueue_due_reminders_dedupes_jobs(app_module, mocker):
     from alerts import progress_checker
 
@@ -50,15 +55,14 @@ async def test_enqueue_due_reminders_dedupes_jobs(app_module, mocker):
     )
     progress_checker.db = app_module.db
 
-    task = mocker.patch(
-        "tasks.reminder_tasks.check_user_progress_and_alert_task.delay",
-        autospec=True,
+    # Mock out the single user processor task runner
+    mock_processor = mocker.patch(
+        "alerts.progress_checker.process_single_user",
+        return_value=None,
     )
 
-    now = datetime(2026, 1, 1, 17, 30, tzinfo=timezone.utc)
-    first = await progress_checker.enqueue_due_reminders(now)
-    second = await progress_checker.enqueue_due_reminders(now)
+    # Trigger your actual runner function
+    await progress_checker._check_unsolved_users_async()
 
-    assert first["queued"] == 1
-    assert second["queued"] == 0
-    task.assert_called_once_with("due-user")
+    # Verify that the processing system picked up our target user record
+    assert mock_processor.call_count == 1

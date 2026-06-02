@@ -50,11 +50,9 @@ class GeminiProvider(AIProvider):
         last_error = None
 
         for model_name in MODEL_FALLBACK_CHAIN:
-
             logger.info("Trying Gemini model: %s", model_name)
 
             for attempt in range(1, MAX_RETRIES + 1):
-
                 try:
                     response = self.client.models.generate_content(
                         model=model_name,
@@ -67,7 +65,6 @@ class GeminiProvider(AIProvider):
                     return self.clean_response(response.text)
 
                 except Exception as e:
-
                     error_str = str(e)
 
                     if (
@@ -75,9 +72,7 @@ class GeminiProvider(AIProvider):
                         or "quota" in error_str.lower()
                         or "rate" in error_str.lower()
                     ):
-
                         if attempt < MAX_RETRIES:
-
                             wait = INITIAL_BACKOFF_SECONDS * attempt
 
                             logger.warning(
@@ -90,22 +85,14 @@ class GeminiProvider(AIProvider):
 
                             continue
 
-                        last_error = Exception(
-                            f"Quota exceeded for {model_name}"
-                        )
+                        last_error = Exception(f"Quota exceeded for {model_name}")
 
                         break
 
-                    if (
-                        "403" in error_str
-                        and (
-                            "invalid" in error_str.lower()
-                            or "leaked" in error_str.lower()
-                        )
+                    if "403" in error_str and (
+                        "invalid" in error_str.lower() or "leaked" in error_str.lower()
                     ):
-                        raise Exception(
-                            "Invalid or leaked Gemini API key"
-                        )
+                        raise Exception("Invalid or leaked Gemini API key")
 
                     raise Exception(f"Gemini error: {error_str}")
 
