@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+import pytest
+
 
 def test_due_timezones_includes_local_11pm_zone():
     from alerts.progress_checker import due_timezones
@@ -9,6 +11,7 @@ def test_due_timezones_includes_local_11pm_zone():
     assert "Asia/Kolkata" in zones
 
 
+@pytest.mark.asyncio
 async def test_find_due_reminder_users_filters_by_timezone(app_module):
     from alerts import progress_checker
 
@@ -37,6 +40,7 @@ async def test_find_due_reminder_users_filters_by_timezone(app_module):
     assert [user["user_id"] for user in users] == ["due-user"]
 
 
+@pytest.mark.asyncio
 async def test_enqueue_due_reminders_dedupes_jobs(app_module, mocker):
     from alerts import progress_checker
 

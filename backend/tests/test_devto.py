@@ -146,7 +146,9 @@ class TestHashnodePublisher:
             )
 
     @pytest.mark.asyncio
-    async def test_graphql_error_without_message_uses_fallback(self, mock_hashnode_request):
+    async def test_graphql_error_without_message_uses_fallback(
+        self, mock_hashnode_request
+    ):
         """GraphQL error dict without 'message' key still raises PublisherError."""
         from devto import HashnodePublisher, PublisherError
 

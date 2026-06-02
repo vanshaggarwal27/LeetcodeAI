@@ -28,6 +28,7 @@ def test_share_to_platforms_twitter_success(monkeypatch):
         linkedin_result = next(r for r in results if r["platform"] == "linkedin")
         assert linkedin_result["status"] == "error"
 
+
 def test_share_to_platforms_missing_keys(monkeypatch):
     monkeypatch.delenv("TWITTER_API_KEY", raising=False)
     monkeypatch.delenv("LINKEDIN_ACCESS_TOKEN", raising=False)

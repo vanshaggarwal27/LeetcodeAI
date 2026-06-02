@@ -14,6 +14,7 @@ class PerplexityProvider(AIProvider):
 
         api_key = api_key or os.getenv("PERPLEXITY_API_KEY")
 
+        api_key = api_key or os.getenv("PERPLEXITY_API_KEY")
 
         if not api_key:
             raise Exception("PERPLEXITY_API_KEY missing")

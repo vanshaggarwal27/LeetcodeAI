@@ -137,8 +137,7 @@ def generate_blog(problem) -> str:
         for attempt in range(1, MAX_RETRIES + 1):
             try:
                 response = client.models.generate_content(
-                    model=model_name,
-                    contents=prompt
+                    model=model_name, contents=prompt
                 )
 
                 if not response.text:
@@ -150,7 +149,9 @@ def generate_blog(problem) -> str:
                 error_str = str(e)
 
                 # --- Leaked / invalid key: no point retrying ---
-                if "403" in error_str and ("leaked" in error_str.lower() or "invalid" in error_str.lower()):
+                if "403" in error_str and (
+                    "leaked" in error_str.lower() or "invalid" in error_str.lower()
+                ):
                     raise Exception(
                         "Your Gemini API key is invalid or has been reported as leaked. "
                         "Please generate a new key at https://aistudio.google.com/app/apikey "
@@ -158,17 +159,27 @@ def generate_blog(problem) -> str:
                     )
 
                 # --- Rate limited: wait and retry ---
-                if "429" in error_str or "quota" in error_str.lower() or "rate" in error_str.lower():
+                if (
+                    "429" in error_str
+                    or "quota" in error_str.lower()
+                    or "rate" in error_str.lower()
+                ):
                     if attempt < MAX_RETRIES:
                         wait = INITIAL_BACKOFF_SECONDS * attempt
                         logger.warning(
                             "Rate limited on %s (attempt %d/%d). Retrying in %ds...",
-                            model_name, attempt, MAX_RETRIES, wait
+                            model_name,
+                            attempt,
+                            MAX_RETRIES,
+                            wait,
                         )
                         time.sleep(wait)
                         continue
                     else:
-                        logger.warning("Quota exhausted on %s. Falling back to next model.", model_name)
+                        logger.warning(
+                            "Quota exhausted on %s. Falling back to next model.",
+                            model_name,
+                        )
                         last_error = Exception(
                             f"Rate limit hit on {model_name} after {MAX_RETRIES} retries. "
                             "Please wait a minute and try again, or upgrade your Gemini API plan."
@@ -187,6 +198,7 @@ def generate_blog(problem) -> str:
 # -----------------------------
 # Code Efficiency Rater
 # -----------------------------
+
 
 def _build_efficiency_prompt(title: str, code: str, language: str) -> str:
     """
@@ -306,8 +318,7 @@ def rate_code_efficiency(title: str, code: str, language: str = "python") -> dic
         for attempt in range(1, MAX_RETRIES + 1):
             try:
                 response = client.models.generate_content(
-                    model=model_name,
-                    contents=prompt
+                    model=model_name, contents=prompt
                 )
 
                 if not response.text:
@@ -319,31 +330,45 @@ def rate_code_efficiency(title: str, code: str, language: str = "python") -> dic
             except Exception as e:
                 error_str = str(e)
 
-                if "403" in error_str and ("leaked" in error_str.lower() or "invalid" in error_str.lower()):
+                if "403" in error_str and (
+                    "leaked" in error_str.lower() or "invalid" in error_str.lower()
+                ):
                     raise Exception(
                         "Your Gemini API key is invalid or has been reported as leaked. "
                         "Please generate a new key at https://aistudio.google.com/app/apikey "
                         "and update the GEMINI_API_KEY in your backend/.env file."
                     )
 
-                if "429" in error_str or "quota" in error_str.lower() or "rate" in error_str.lower():
+                if (
+                    "429" in error_str
+                    or "quota" in error_str.lower()
+                    or "rate" in error_str.lower()
+                ):
                     if attempt < MAX_RETRIES:
                         wait = INITIAL_BACKOFF_SECONDS * attempt
                         logger.warning(
                             "Rate limited on %s (attempt %d/%d). Retrying in %ds...",
-                            model_name, attempt, MAX_RETRIES, wait
+                            model_name,
+                            attempt,
+                            MAX_RETRIES,
+                            wait,
                         )
                         time.sleep(wait)
                         continue
                     else:
-                        logger.warning("Quota exhausted on %s. Falling back to next model.", model_name)
+                        logger.warning(
+                            "Quota exhausted on %s. Falling back to next model.",
+                            model_name,
+                        )
                         last_error = Exception(
                             f"Rate limit hit on {model_name} after {MAX_RETRIES} retries. "
                             "Please wait a minute and try again, or upgrade your Gemini API plan."
                         )
                         break
 
-                raise Exception(f"Gemini API error during efficiency rating: {error_str}")
+                raise Exception(
+                    f"Gemini API error during efficiency rating: {error_str}"
+                )
 
     raise last_error or Exception(
         "All Gemini models are currently quota-limited. Please wait a minute and try again."

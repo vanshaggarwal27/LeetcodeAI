@@ -105,6 +105,12 @@ class FakeCollection:
         return True
 
 
+class FakeProblemInfoCollection:
+    def __init__(self):
+        self.find_one = AsyncMock(return_value=None)
+        self.update_one = AsyncMock()
+
+
 class FakeDatabase:
     def __init__(self) -> None:
         self.preferences = FakeCollection()
