@@ -1,10 +1,8 @@
 import asyncio
 import os
-from datetime import datetime, time, timezone  # noqa: F401
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError  # noqa: F401
+from datetime import datetime, timezone
 
 import motor.motor_asyncio
-import pytz  # noqa: F401
 import requests
 
 from alerts.elevenlabs_service import generate_message
@@ -119,4 +117,13 @@ async def _check_unsolved_users_async():
 
 
 def check_unsolved_users():
-    asyncio.run(_check_unsolved_users_async())
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    if loop.is_running():
+        asyncio.ensure_future(_check_unsolved_users_async())
+    else:
+        loop.run_until_complete(_check_unsolved_users_async())
