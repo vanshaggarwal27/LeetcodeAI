@@ -5,7 +5,6 @@ Tests check response body, not status code, for error cases
 because all routes return HTTP 200 even on failure.
 """
 
-import pytest
 
 
 class TestHealthRoutes:
@@ -115,7 +114,7 @@ class TestGenerateBlogRoute:
     ):
         """Verify generate_blog is actually called once."""
         mock_generate_blog.return_value = "Mocked blog content generation output"
-        
+
         payload = {
             "title": "Two Sum",
             "description": "Given an array...",
@@ -131,7 +130,7 @@ class TestGenerateBlogRoute:
         """Verify post_to_platform is called with the correct title."""
         mock_generate_blog.return_value = "Mocked blog content generation output"
         mock_post_to_platform.return_value = {"status": "success", "url": "https://dev.to/test"}
-        
+
         payload = {
             "title": "Two Sum",
             "description": "Given an array...",
