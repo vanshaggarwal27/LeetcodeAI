@@ -1,6 +1,7 @@
 import asyncio
 import os
 from datetime import datetime, timezone
+
 import motor.motor_asyncio
 import requests
 
@@ -117,13 +118,9 @@ async def _check_unsolved_users_async():
 
 def check_unsolved_users():
     try:
+        # Use existing running loop if available (e.g. under pytest-asyncio environment)
         loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = None
-
-    if loop and loop.is_running():
-        # Running inside an active test environment loop
         loop.create_task(_check_unsolved_users_async())
-    else:
-        # Standard script or cron deployment entry point
+    except RuntimeError:
+        # Standard synchronous context entry point
         asyncio.run(_check_unsolved_users_async())
