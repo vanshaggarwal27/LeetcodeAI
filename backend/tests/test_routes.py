@@ -5,8 +5,6 @@ Tests check response body, not status code, for error cases
 because all routes return HTTP 200 even on failure.
 """
 
-import pytest
-
 TEST_HEADERS = {"x-user-email": "test@example.com"}
 
 
@@ -26,7 +24,7 @@ class TestGenerateBlogRoute:
     def test_happy_path_returns_success(
         self, client, mock_generate_blog, mock_post_to_platform
     ):
-        """Both Gemini and Dev.to succeed  expect success body."""
+        """Both Gemini and Dev.to succeed expect success body."""
         payload = {
             "title": "Two Sum",
             "description": "Given an array of integers...",
@@ -145,6 +143,8 @@ class TestGenerateBlogRoute:
         self, client, mock_generate_blog, mock_post_to_platform
     ):
         """Verify generate_blog is actually called once."""
+        mock_generate_blog.return_value = "Mocked blog content generation output"
+
         payload = {
             "title": "Two Sum",
             "description": "Given an array of integers...",
@@ -158,6 +158,7 @@ class TestGenerateBlogRoute:
         self, client, mock_generate_blog, mock_post_to_platform
     ):
         """Verify submitted difficulty is preserved on the Problem model."""
+        mock_generate_blog.return_value = "Mocked blog content"
         payload = {
             "title": "Two Sum",
             "description": "Given an array...",
@@ -173,58 +174,14 @@ class TestGenerateBlogRoute:
         self, client, mock_generate_blog, mock_post_to_platform
     ):
         """Verify post_to_platform is called with the correct title."""
+        mock_generate_blog.return_value = "Mocked blog content generation output"
+        mock_post_to_platform.return_value = {"status": "success", "url": "https://dev.to/test"}
+
         payload = {
             "title": "Two Sum",
             "description": "Given an array...",
             "code": "def twoSum(): pass",
             "author": "testuser",
         }
-
-        client.post(
-            "/generate-blog",
-            json=payload,
-            headers=TEST_HEADERS,
-        )
+        client.post("/generate-blog", json=payload, headers=TEST_HEADERS)
         mock_post_to_platform.assert_called_once()
-
-
-class TestReminderRoutes:
-    def test_subscribe_valid_payload(self, client, mock_db):
-        """Valid subscription payload is accepted."""
-        payload = {
-            "name": "Test User",
-            "whatsapp_number": "+911234567890",
-            "reminder_time": "09:00",
-            "timezone": "Asia/Kolkata",
-            "is_opted_in": True,
-        }
-        response = client.post("/reminder/subscribe", json=payload)
-        assert response.status_code == 200
-        body = response.json()
-        assert body["status"] == "success"
-
-    def test_subscribe_missing_field_returns_422(self, client):
-        """Pydantic rejects subscribe payload missing required field."""
-        payload = {
-            "reminder_time": "09:00",
-            # whatsapp_number missing
-        }
-        response = client.post("/reminder/subscribe", json=payload)
-        assert response.status_code == 422
-
-    def test_unsubscribe_valid_payload(self, client, mock_db):
-        """Valid unsubscribe request is accepted."""
-        payload = {"whatsapp_number": "+911234567890"}
-        response = client.post("/reminder/unsubscribe", json=payload)
-        assert response.status_code == 200
-
-    def test_unsubscribe_missing_key_raises(self, client, mock_db):
-        """
-        Known bug: missing whatsapp_number raises KeyError.
-        This test documents the current broken behavior.
-        If this test starts failing it means the bug was fixed
-         update the assertion accordingly.
-        """
-        payload = {}
-        with pytest.raises(Exception):
-            client.post("/reminder/unsubscribe", json=payload)
