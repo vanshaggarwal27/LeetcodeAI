@@ -14,33 +14,33 @@ if str(BACKEND_DIR) not in sys.path:
 
 
 class TestPostToPlatform:
-    def test_successful_publish_returns_dict(self, mock_devto_request):
+    async def test_successful_publish_returns_dict(self, mock_devto_request):
         """Successful publish returns parsed JSON dict."""
         from devto import post_to_platform
 
-        result = post_to_platform("Two Sum", "# Blog content")
+        result = await post_to_platform("Two Sum", "# Blog content")
         assert isinstance(result, dict)
         assert result["id"] == 123
 
-    def test_post_sends_correct_title(self, mock_devto_request):
+    async def test_post_sends_correct_title(self, mock_devto_request):
         """The title is included in the request body."""
         from devto import post_to_platform
 
-        post_to_platform("Two Sum", "# Blog content")
+        await post_to_platform("Two Sum", "# Blog content")
         call_kwargs = mock_devto_request["request"].call_args[1]
         assert call_kwargs["json"]["article"]["title"] == "LeetCode Solution: Two Sum"
 
-    def test_post_sends_correct_content(self, mock_devto_request):
+    async def test_post_sends_correct_content(self, mock_devto_request):
         """The markdown content is included in the request body."""
         from devto import post_to_platform
 
-        post_to_platform("Two Sum", "# Blog content here")
+        await post_to_platform("Two Sum", "# Blog content here")
         call_kwargs = mock_devto_request["request"].call_args[1]
         assert (
             "# Blog content here" in (call_kwargs["json"]["article"]["body_markdown"])
         )
 
-    def test_devto_api_error_raises(self, mock_devto_request):
+    async def test_devto_api_error_raises(self, mock_devto_request):
         """Non-2xx response raises an exception."""
         from devto import post_to_platform
 
@@ -48,7 +48,7 @@ class TestPostToPlatform:
         mock_devto_request["response"].text = "Internal Server Error"
 
         with pytest.raises(Exception):
-            post_to_platform("Two Sum", "# Blog content")
+            await post_to_platform("Two Sum", "# Blog content")
 
 
 class TestNormalizePlatforms:
@@ -183,3 +183,4 @@ class TestHashnodePublisher:
             "Two Sum", "# content", tags=["leetcode"], published=True
         )
         assert result.status == "success"
+

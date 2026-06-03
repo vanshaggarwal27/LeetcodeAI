@@ -134,6 +134,26 @@ python main.py
 The server will start at `http://localhost:10000`.
 
 ---
+### Generate Blog from LeetCode
+
+![Generate Blog Demo](assets/generate-blog-demo.gif)
+
+---
+
+### Summerize Project Architecture for beginners
+
+```text
+LeetCode Problem
+       ↓
+Chrome Extension
+       ↓
+FastAPI Backend
+       ↓
+Gemini API
+       ↓
+Generated Blog
+```
+---
 
 ### 3. Run the Reminder Queue
 
@@ -192,9 +212,10 @@ The **LeetLog AI** extension icon will appear in your toolbar.
 
 ---
 
+
 ## 📁 Project Structure
 
-```
+```text
 LeetcodeAI/
 │
 ├── backend/                  # Python FastAPI server
