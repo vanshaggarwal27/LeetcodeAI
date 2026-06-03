@@ -105,16 +105,18 @@ class FakeCollection:
         return True
 
 
+
 class FakeProblemInfoCollection:
-    def __init__(self):
+    def __init__(self) -> None:
         self.find_one = AsyncMock(return_value=None)
         self.update_one = AsyncMock()
+        self.count_documents = AsyncMock(return_value=0)
 
 
 class FakeDatabase:
     def __init__(self) -> None:
         self.preferences = FakeCollection()
-        self.problem_info = FakeCollection()
+        self.problem_info = FakeProblemInfoCollection()
         self.users = FakeCollection()
         self.integration_settings = FakeCollection()
         self.reminder_jobs = FakeCollection()
@@ -237,15 +239,16 @@ def mock_gemini_client(mocker):
 
 @pytest.fixture
 def mock_devto_request(mocker):
-    devto_module = importlib.import_module("devto")
     response = Mock(name="devto_response")
     response.status_code = 201
     response.json.return_value = {"id": 123, "url": "https://dev.to/mock-post"}
-    request_mock = mocker.patch.object(
-        devto_module.requests,
-        "post",
-        autospec=True,
-        return_value=response,
+
+    async def fake_post(*args, **kwargs):
+        return response
+
+    request_mock = mocker.patch(
+        "httpx.AsyncClient.post",
+        side_effect=fake_post,
     )
     return {"request": request_mock, "response": response}
 

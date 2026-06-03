@@ -1,11 +1,9 @@
 import asyncio
 import os
-import time
 from dataclasses import dataclass
 from typing import Any
 
 import httpx
-import requests
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -42,7 +40,7 @@ class PublisherError(Exception):
 class BasePublisher:
     platform = "base"
 
-    def publish(
+    async def publish(
         self,
         title: str,
         content: str,
@@ -54,7 +52,7 @@ class BasePublisher:
         raise NotImplementedError
 
     @staticmethod
-    def _post_with_retries(
+    async def _post_with_retries(
         url: str,
         *,
         headers: dict[str, str],
@@ -62,26 +60,31 @@ class BasePublisher:
         platform: str,
         retries: int = 2,
     ) -> dict[str, Any]:
-        for attempt in range(retries + 1):
-            try:
-                response = requests.post(url, headers=headers, json=payload, timeout=20)
-                if response.status_code in (200, 201):
-                    return response.json()
-                if attempt == retries:
-                    raise PublisherError(
-                        f"{platform} API Error {response.status_code}: {response.text}"
+        async with httpx.AsyncClient() as client:
+            for attempt in range(retries + 1):
+                try:
+                    response = await client.post(
+                        url, headers=headers, json=payload, timeout=20.0
                     )
-            except requests.RequestException as exc:
-                if attempt == retries:
-                    raise PublisherError(f"{platform} network error: {exc}") from exc
-            time.sleep(1)
-        raise PublisherError(f"{platform} API request failed.")
+                    if response.status_code in (200, 201):
+                        return response.json()
+                    if attempt == retries:
+                        raise PublisherError(
+                            f"{platform} API Error {response.status_code}: {response.text}"
+                        )
+                except httpx.RequestError as exc:
+                    if attempt == retries:
+                        raise PublisherError(
+                            f"{platform} network error: {exc}"
+                        ) from exc
+                await asyncio.sleep(1)
+            raise PublisherError(f"{platform} API request failed.")
 
 
 class DevToPublisher(BasePublisher):
     platform = "devto"
 
-    def publish(
+    async def publish(
         self,
         title: str,
         content: str,
@@ -96,7 +99,7 @@ class DevToPublisher(BasePublisher):
                 "Dev.to API key missing. Add it in Settings > Integrations."
             )
 
-        response = self._post_with_retries(
+        response = await self._post_with_retries(
             "https://dev.to/api/articles",
             headers={
                 "api-key": api_key,
@@ -196,7 +199,7 @@ class HashnodePublisher(BasePublisher):
 class MediumPublisher(BasePublisher):
     platform = "medium"
 
-    def publish(
+    async def publish(
         self,
         title: str,
         content: str,
@@ -213,7 +216,7 @@ class MediumPublisher(BasePublisher):
                 "Medium publishing requires MEDIUM_TOKEN and MEDIUM_USER_ID."
             )
 
-        response = self._post_with_retries(
+        response = await self._post_with_retries(
             f"https://api.medium.com/v1/users/{user_id}/posts",
             headers={
                 "Authorization": f"Bearer {token}",
@@ -241,7 +244,7 @@ class MediumPublisher(BasePublisher):
 class WebhookPublisher(BasePublisher):
     platform = "webhook"
 
-    def publish(
+    async def publish(
         self,
         title: str,
         content: str,
@@ -254,7 +257,7 @@ class WebhookPublisher(BasePublisher):
         if not webhook_url:
             raise PublisherError("Personal blog publishing requires BLOG_WEBHOOK_URL.")
 
-        response = self._post_with_retries(
+        response = await self._post_with_retries(
             webhook_url,
             headers={"Content-Type": "application/json"},
             payload={
@@ -343,9 +346,9 @@ async def publish_to_platforms(
     return [result.as_dict() for result in results]
 
 
-def post_to_platform(title: str, content: str) -> dict[str, Any]:
+async def post_to_platform(title: str, content: str) -> dict[str, Any]:
     """Backward-compatible Dev.to-only wrapper used by older integrations."""
-    result = DevToPublisher().publish(
+    result = await DevToPublisher().publish(
         title,
         content,
         tags=DEFAULT_TAGS,

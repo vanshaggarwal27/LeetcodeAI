@@ -151,7 +151,25 @@
             margin-top: 10px;
             padding-top: 10px;
         }
-                /* ── Email setup screen ── */
+        .history-item {
+            display: block;
+            padding: 7px 8px;
+            margin-bottom: 5px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--text);
+            text-decoration: none;
+            background: #fafafa;
+            transition: background 0.15s;
+            cursor: pointer;
+        }
+        .history-item:hover { background: #fff3d6; border-color: var(--primary); }
+        .history-item-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .history-item-meta { font-size: 10px; color: var(--text-small); margin-top: 2px; }
+        .history-empty { font-size: 12px; color: var(--text-small); padding: 8px 0; text-align: center; }
+
+        /* ── Email setup screen ── */
         #emailSetup {
             display: none;
             flex-direction: column;
@@ -315,7 +333,11 @@
     </div>
     
     <div id="status">Ready to blog! 🚀</div>
-    <button id="dashboardBtn" style="margin-top:8px;background:#1a1a2e;font-size:13px;padding:10px;color:#f7a01a;width:100%;border-radius:8px;cursor:pointer;border:1px solid #f7a01a;">📊 View Dashboard</button>    
+    <details id="historySection" style="margin-top:14px; text-align:left;">
+        <summary style="cursor:pointer; font-size:12px; font-weight:700; text-transform:uppercase; color:var(--text-small); padding:6px 0; user-select:none;">📋 Recent Posts</summary>
+        <div id="historyList" style="margin-top:8px; max-height:160px; overflow-y:auto;"></div>
+    </details>
+    <button id="dashboardBtn" style="margin-top:8px;background:#1a1a2e;font-size:13px;padding:10px;color:#f7a01a;width:100%;border-radius:8px;cursor:pointer;border:1px solid #f7a01a;">📊 View Dashboard</button>
     <div class="footer">
         Powered by Gemini & LeetLog AI
     </div>

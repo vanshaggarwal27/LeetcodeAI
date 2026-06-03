@@ -12,6 +12,7 @@ import motor.motor_asyncio
 import uvicorn
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -403,7 +404,7 @@ async def create_blog(
     user_settings = await _settings_for_user(current_user["id"]) if current_user else {}
 
     try:
-        blog_content = generate_blog(problem, credentials=user_settings)
+        blog_content = await run_in_threadpool(generate_blog, problem, credentials=user_settings)
     except Exception as e:
         return {"status": "error", "message": f"AI provider failure: {str(e)}"}
 
@@ -693,3 +694,4 @@ async def unsubscribe(data: dict):
 # -----------------------------
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=10000, reload=True)
+
