@@ -2,12 +2,14 @@ fastapi
 uvicorn[standard]
 pydantic
 google-genai
+
 httpx
 requests
 python-dotenv
 twilio
 elevenlabs
 apscheduler
+celery[redis]
 motor
 pytz
 pymongo
@@ -20,3 +22,4 @@ pytest-asyncio
 pytest-mock
 responses
 ruff
+

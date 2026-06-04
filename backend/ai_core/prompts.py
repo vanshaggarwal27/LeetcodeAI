@@ -13,7 +13,7 @@ Author Account: {problem.author}
 Publishing Time: {current_time}
 Title: {problem.title}
 
-Difficulty: {getattr(problem, 'difficulty', 'Unknown')}
+Difficulty: {getattr(problem, "difficulty", "Unknown")}
 Problem Description:
 {problem.description}
 

@@ -7,6 +7,8 @@ because all routes return HTTP 200 even on failure.
 
 import pytest
 
+TEST_HEADERS = {"x-user-email": "test@example.com"}
+
 
 class TestHealthRoutes:
     def test_root_returns_ok(self, client):
@@ -31,7 +33,11 @@ class TestGenerateBlogRoute:
             "code": "def twoSum(nums, target): pass",
             "author": "testuser",
         }
-        response = client.post("/generate-blog", json=payload)
+        response = client.post(
+            "/generate-blog",
+            json=payload,
+            headers=TEST_HEADERS,
+        )
         assert response.status_code == 200
         body = response.json()
         assert body["status"] == "success"
@@ -46,7 +52,12 @@ class TestGenerateBlogRoute:
             "code": "",
             "author": "testuser",
         }
-        response = client.post("/generate-blog", json=payload)
+
+        response = client.post(
+            "/generate-blog",
+            json=payload,
+            headers=TEST_HEADERS,
+        )
         assert response.status_code == 200
         body = response.json()
         assert body["status"] == "error"
@@ -60,7 +71,12 @@ class TestGenerateBlogRoute:
             "code": "   ",
             "author": "testuser",
         }
-        response = client.post("/generate-blog", json=payload)
+
+        response = client.post(
+            "/generate-blog",
+            json=payload,
+            headers=TEST_HEADERS,
+        )
         assert response.status_code == 200
         body = response.json()
         assert body["status"] == "error"
@@ -73,7 +89,12 @@ class TestGenerateBlogRoute:
             "code": "def twoSum(): pass",
             # description and author are missing
         }
-        response = client.post("/generate-blog", json=payload)
+
+        response = client.post(
+            "/generate-blog",
+            json=payload,
+            headers=TEST_HEADERS,
+        )
         assert response.status_code == 422
 
     def test_gemini_failure_returns_error_body(
@@ -87,7 +108,12 @@ class TestGenerateBlogRoute:
             "code": "def twoSum(): pass",
             "author": "testuser",
         }
-        response = client.post("/generate-blog", json=payload)
+
+        response = client.post(
+            "/generate-blog",
+            json=payload,
+            headers=TEST_HEADERS,
+        )
         assert response.status_code == 200
         body = response.json()
         assert body["status"] == "error"
@@ -104,7 +130,12 @@ class TestGenerateBlogRoute:
             "code": "def twoSum(): pass",
             "author": "testuser",
         }
-        response = client.post("/generate-blog", json=payload)
+
+        response = client.post(
+            "/generate-blog",
+            json=payload,
+            headers=TEST_HEADERS,
+        )
         assert response.status_code == 200
         body = response.json()
         assert body["status"] == "error"
@@ -116,12 +147,27 @@ class TestGenerateBlogRoute:
         """Verify generate_blog is actually called once."""
         payload = {
             "title": "Two Sum",
+            "description": "Given an array of integers...",
+            "code": "def twoSum(nums, target): pass",
+            "author": "testuser",
+        }
+        client.post("/generate-blog", json=payload, headers=TEST_HEADERS)
+        mock_generate_blog.assert_called_once()
+
+    def test_generate_blog_receives_difficulty(
+        self, client, mock_generate_blog, mock_post_to_platform
+    ):
+        """Verify submitted difficulty is preserved on the Problem model."""
+        payload = {
+            "title": "Two Sum",
             "description": "Given an array...",
             "code": "def twoSum(): pass",
             "author": "testuser",
+            "difficulty": "Easy",
         }
-        client.post("/generate-blog", json=payload)
-        mock_generate_blog.assert_called_once()
+        client.post("/generate-blog", json=payload, headers=TEST_HEADERS)
+        problem = mock_generate_blog.call_args.args[0]
+        assert problem.difficulty == "Easy"
 
     def test_post_to_platform_receives_title(
         self, client, mock_generate_blog, mock_post_to_platform
@@ -133,7 +179,12 @@ class TestGenerateBlogRoute:
             "code": "def twoSum(): pass",
             "author": "testuser",
         }
-        client.post("/generate-blog", json=payload)
+
+        client.post(
+            "/generate-blog",
+            json=payload,
+            headers=TEST_HEADERS,
+        )
         mock_post_to_platform.assert_called_once()
 
 

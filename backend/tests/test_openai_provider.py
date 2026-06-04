@@ -29,9 +29,7 @@ def make_provider(outcomes):
     provider = OpenAIProvider.__new__(OpenAIProvider)
     completions = SequenceCompletions(outcomes)
     provider.models = ("gpt-4o-mini", "gpt-4o")
-    provider.client = SimpleNamespace(
-        chat=SimpleNamespace(completions=completions)
-    )
+    provider.client = SimpleNamespace(chat=SimpleNamespace(completions=completions))
     return provider, completions
 
 
@@ -63,7 +61,10 @@ def test_init_uses_low_cost_default_and_bounded_client(monkeypatch):
 def test_clean_response_removes_only_outer_markdown_fence():
     wrapped = "```markdown\n# Title\n\n```python\nprint('ok')\n```\n```"
 
-    assert OpenAIProvider.clean_response(wrapped) == "# Title\n\n```python\nprint('ok')\n```"
+    assert (
+        OpenAIProvider.clean_response(wrapped)
+        == "# Title\n\n```python\nprint('ok')\n```"
+    )
 
 
 def test_clean_response_preserves_valid_final_code_fence():

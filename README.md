@@ -134,8 +134,63 @@ python main.py
 The server will start at `http://localhost:10000`.
 
 ---
+### Generate Blog from LeetCode
 
-### 3. Load the Chrome Extension
+![Generate Blog Demo](assets/generate-blog-demo.gif)
+
+---
+
+### Summerize Project Architecture for beginners
+
+```text
+LeetCode Problem
+       ↓
+Chrome Extension
+       ↓
+FastAPI Backend
+       ↓
+Gemini API
+       ↓
+Generated Blog
+```
+---
+
+### 3. Run the Reminder Queue
+
+Daily reminders are scheduled in each user's local timezone. The API process checks every 15 minutes for opted-in users whose local time is currently 11:00 PM, then queues one Celery job per due user so progress checks and alerts run concurrently.
+
+Start Redis, then run a worker from the backend folder:
+
+```bash
+cd backend
+celery -A celery_app.celery_app worker --loglevel=info -Q reminders
+```
+
+Set `REDIS_URL`, `CELERY_BROKER_URL`, or `CELERY_RESULT_BACKEND` when Redis is not running at `redis://localhost:6379/0`.
+
+---
+
+### 4. Run the Web Dashboard
+
+The dashboard gives each user a visual onboarding flow for account creation, login, and integration settings. Saved settings are stored in MongoDB and used by authenticated API calls, so users no longer need to edit `.env` for their own Dev.to, LinkedIn, WhatsApp, timezone, or AI-provider preferences.
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`.
+
+Set `VITE_API_URL` if your FastAPI backend is not running at `http://localhost:10000`.
+
+```bash
+VITE_API_URL=https://your-backend-url npm run dev
+```
+
+---
+
+### 5. Load the Chrome Extension
 
 1. Open Chrome and navigate to `chrome://extensions/`
 2. Enable **Developer mode** (top-right toggle)
@@ -146,7 +201,7 @@ The **LeetLog AI** extension icon will appear in your toolbar.
 
 ---
 
-### 4. Use It!
+### 6. Use It!
 
 1. Go to any LeetCode problem page (e.g., `https://leetcode.com/problems/two-sum/`)
 2. Write or paste your solution
@@ -157,9 +212,10 @@ The **LeetLog AI** extension icon will appear in your toolbar.
 
 ---
 
+
 ## 📁 Project Structure
 
-```
+```text
 LeetcodeAI/
 │
 ├── backend/                  # Python FastAPI server

@@ -1,21 +1,25 @@
+import os
+
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from utils.progress_checker import has_completed_daily_problem
+from alerts.progress_checker import check_unsolved_users
 
-scheduler = BackgroundScheduler()
+SCHEDULER_INTERVAL_MINUTES = int(os.getenv("REMINDER_SCHEDULER_INTERVAL_MINUTES", "15"))
 
-
-def check_daily_progress():
-    user_id = "demo-user"
-
-    completed = has_completed_daily_problem(user_id)
-
-    if not completed:
-        print("User missed daily problem. Trigger reminder call.")
-
-
-scheduler.add_job(check_daily_progress, "interval", minutes=60)
+scheduler = BackgroundScheduler(timezone="UTC")
 
 
 def start_scheduler():
+    if scheduler.running:
+        return
+
+    scheduler.add_job(
+        check_unsolved_users,
+        "interval",
+        minutes=SCHEDULER_INTERVAL_MINUTES,
+        id="enqueue_due_reminder_checks",
+        replace_existing=True,
+        coalesce=True,
+        max_instances=1,
+    )
     scheduler.start()

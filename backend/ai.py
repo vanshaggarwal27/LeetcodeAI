@@ -22,69 +22,77 @@ MAX_RETRIES = 3
 INITIAL_BACKOFF_SECONDS = 35  # Free tier asks to retry after ~35s
 
 
+def _difficulty_badge(difficulty: str) -> str:
+    badges = {"Easy": "🟢 Easy", "Medium": "🟡 Medium", "Hard": "🔴 Hard"}
+    return badges.get(difficulty, f"⚪ {difficulty}")
+
+
 def _build_prompt(problem, current_time: str) -> str:
     """
-    Build the prompt string to send to Gemini AI.
+    Builds a structured prompt for Gemini AI using LeetCode problem details,
+    solution code, author information, and optional custom instructions.
 
     Args:
-       problem: LeetCode problem object containing title, description, code and author
-       current_time: Current timestamp string
+        problem: Object containing the LeetCode problem title, description,
+            code, author, difficulty, and custom prompt.
+        current_time (str): Timestamp used in the generated blog footer.
 
     Returns:
         str: Formatted prompt string for Gemini AI
     """
+    badge = _difficulty_badge(getattr(problem, "difficulty", None) or "Unknown")
     custom_instructions = ""
+    badge = _difficulty_badge(getattr(problem, 'difficulty', 'Unknown'))
 
     default_prompt = f"""
-        You are a professional technical writer and competitive programmer.
+You are a professional technical writer and competitive programmer.
 
-        Generate a highly engaging, beginner-friendly Dev.to blog post about a LeetCode problem.
+Generate a highly engaging, beginner-friendly Dev.to blog post about a LeetCode problem.
 
-        Author Account: {problem.author}
-        Publishing Time: {current_time}
-        Title: {problem.title}
+Author Account: {problem.author}
+Publishing Time: {current_time}
+Title: {problem.title}
+Difficulty: {badge}
 
-        Problem Description:
-        {problem.description}
+Problem Description:
+{problem.description}
 
-        Solution Code:
-        {problem.code}
+Solution Code:
+{problem.code}
 
-        Strictly follow this structure:
-        1. Title (Use an engaging # Title instead of YAML)
-        2. Problem Explanation (explain it simply, as if to a beginner)
-        3. Intuition (the "aha!" moment)
-        4. Approach (step-by-step logic)
-        5. Code (formatted clearly inside markdown code blocks, specify language if obvious)
-        6. Time & Space Complexity Analysis
-        7. Key Takeaways
-        8. Submission Details (MUST include the Author Account [{problem.author}] and the Time Published [{current_time}] in a concluding footnote)
+Strictly follow this structure:
+1. Title (Use an engaging # Title instead of YAML)
+2. Difficulty Badge — render it prominently right below the title as: **Difficulty:** {badge}
+3. Problem Explanation (explain it simply, as if to a beginner)
+4. Intuition (the "aha!" moment)
+5. Approach (step-by-step logic)
+6. Code (formatted clearly inside markdown code blocks, specify language if obvious)
+7. Time & Space Complexity Analysis
+8. Key Takeaways
+9. Submission Details (MUST include the Author Account [{problem.author}] and the Time Published [{current_time}] in a concluding footnote)
 
-        CRITICAL INSTRUCTIONS:
-        - DO NOT wrap the output in ```markdown or ``` tags. Return raw markdown text.
-        - DO NOT output YAML frontmatter (no --- blocks).
-        - TABLE FORMATTING (STRICT RULES):
-        - If you use a Markdown table, it MUST be perfectly formatted to render correctly.
-        - Each row (header, separator, or data) MUST start with `|` and end with `|`.
-        - A table row MUST be on exactly ONE single line. DO NOT use line breaks inside rows.
-        - The header row, separator row (e.g., `|---|---|`), and all data rows MUST have the EXACT same number of columns.
-        - CELL CONTENT: If a cell contains a bitwise OR operator `|` or any pipe character, you MUST escape it as `\\|` (e.g., `(a \\| b)`). Failing to escape pipes inside cells will break the table structure.
-        - Ensure the separator line is continuous (no line breaks) and uses at least 3 dashes per column.
-        - Always provide an EMPTY LINE before and after the table to ensure correct rendering.
-    """
+CRITICAL INSTRUCTIONS:
+- DO NOT wrap the output in ```markdown or ``` tags. Return raw markdown text.
+- DO NOT output YAML frontmatter (no --- blocks).
+- TABLE FORMATTING (STRICT RULES):
+  - If you use a Markdown table, it MUST be perfectly formatted to render correctly.
+  - Each row (header, separator, or data) MUST start with `|` and end with `|`.
+  - A table row MUST be on exactly ONE single line. DO NOT use line breaks inside rows.
+  - The header row, separator row (e.g., `|---|---|`), and all data rows MUST have the EXACT same number of columns.
+  - CELL CONTENT: If a cell contains a bitwise OR operator `|` or any pipe character, you MUST escape it as `\\|` (e.g., `(a \\| b)`). Failing to escape pipes inside cells will break the table structure.
+  - Ensure the separator line is continuous (no line breaks) and uses at least 3 dashes per column.
+  - Always provide an EMPTY LINE before and after the table to ensure correct rendering.
+"""
 
     if hasattr(problem, "custom_prompt") and problem.custom_prompt:
-        cleaned_custom_prompt = problem.custom_prompt.strip()
-        if cleaned_custom_prompt:
+        cleaned = problem.custom_prompt.strip()
+        if cleaned:
             custom_instructions = f"""
-                Additional User Prompt Preferences:
-                {cleaned_custom_prompt}
-            """
+Additional User Prompt Preferences:
+{cleaned}
+"""
 
-    return f"""
-            {default_prompt}
-            {custom_instructions}
-            """
+    return f"{default_prompt}{custom_instructions}"
 
 
 def _clean_response(text: str) -> str:
@@ -137,8 +145,7 @@ def generate_blog(problem) -> str:
         for attempt in range(1, MAX_RETRIES + 1):
             try:
                 response = client.models.generate_content(
-                    model=model_name,
-                    contents=prompt
+                    model=model_name, contents=prompt
                 )
 
                 if not response.text:
@@ -150,7 +157,9 @@ def generate_blog(problem) -> str:
                 error_str = str(e)
 
                 # --- Leaked / invalid key: no point retrying ---
-                if "403" in error_str and ("leaked" in error_str.lower() or "invalid" in error_str.lower()):
+                if "403" in error_str and (
+                    "leaked" in error_str.lower() or "invalid" in error_str.lower()
+                ):
                     raise Exception(
                         "Your Gemini API key is invalid or has been reported as leaked. "
                         "Please generate a new key at https://aistudio.google.com/app/apikey "
@@ -158,17 +167,27 @@ def generate_blog(problem) -> str:
                     )
 
                 # --- Rate limited: wait and retry ---
-                if "429" in error_str or "quota" in error_str.lower() or "rate" in error_str.lower():
+                if (
+                    "429" in error_str
+                    or "quota" in error_str.lower()
+                    or "rate" in error_str.lower()
+                ):
                     if attempt < MAX_RETRIES:
                         wait = INITIAL_BACKOFF_SECONDS * attempt
                         logger.warning(
                             "Rate limited on %s (attempt %d/%d). Retrying in %ds...",
-                            model_name, attempt, MAX_RETRIES, wait
+                            model_name,
+                            attempt,
+                            MAX_RETRIES,
+                            wait,
                         )
                         time.sleep(wait)
                         continue
                     else:
-                        logger.warning("Quota exhausted on %s. Falling back to next model.", model_name)
+                        logger.warning(
+                            "Quota exhausted on %s. Falling back to next model.",
+                            model_name,
+                        )
                         last_error = Exception(
                             f"Rate limit hit on {model_name} after {MAX_RETRIES} retries. "
                             "Please wait a minute and try again, or upgrade your Gemini API plan."
@@ -187,6 +206,7 @@ def generate_blog(problem) -> str:
 # -----------------------------
 # Code Efficiency Rater
 # -----------------------------
+
 
 def _build_efficiency_prompt(title: str, code: str, language: str) -> str:
     """
@@ -306,8 +326,7 @@ def rate_code_efficiency(title: str, code: str, language: str = "python") -> dic
         for attempt in range(1, MAX_RETRIES + 1):
             try:
                 response = client.models.generate_content(
-                    model=model_name,
-                    contents=prompt
+                    model=model_name, contents=prompt
                 )
 
                 if not response.text:
@@ -319,31 +338,45 @@ def rate_code_efficiency(title: str, code: str, language: str = "python") -> dic
             except Exception as e:
                 error_str = str(e)
 
-                if "403" in error_str and ("leaked" in error_str.lower() or "invalid" in error_str.lower()):
+                if "403" in error_str and (
+                    "leaked" in error_str.lower() or "invalid" in error_str.lower()
+                ):
                     raise Exception(
                         "Your Gemini API key is invalid or has been reported as leaked. "
                         "Please generate a new key at https://aistudio.google.com/app/apikey "
                         "and update the GEMINI_API_KEY in your backend/.env file."
                     )
 
-                if "429" in error_str or "quota" in error_str.lower() or "rate" in error_str.lower():
+                if (
+                    "429" in error_str
+                    or "quota" in error_str.lower()
+                    or "rate" in error_str.lower()
+                ):
                     if attempt < MAX_RETRIES:
                         wait = INITIAL_BACKOFF_SECONDS * attempt
                         logger.warning(
                             "Rate limited on %s (attempt %d/%d). Retrying in %ds...",
-                            model_name, attempt, MAX_RETRIES, wait
+                            model_name,
+                            attempt,
+                            MAX_RETRIES,
+                            wait,
                         )
                         time.sleep(wait)
                         continue
                     else:
-                        logger.warning("Quota exhausted on %s. Falling back to next model.", model_name)
+                        logger.warning(
+                            "Quota exhausted on %s. Falling back to next model.",
+                            model_name,
+                        )
                         last_error = Exception(
                             f"Rate limit hit on {model_name} after {MAX_RETRIES} retries. "
                             "Please wait a minute and try again, or upgrade your Gemini API plan."
                         )
                         break
 
-                raise Exception(f"Gemini API error during efficiency rating: {error_str}")
+                raise Exception(
+                    f"Gemini API error during efficiency rating: {error_str}"
+                )
 
     raise last_error or Exception(
         "All Gemini models are currently quota-limited. Please wait a minute and try again."
