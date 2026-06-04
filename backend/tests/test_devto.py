@@ -181,4 +181,3 @@ class TestHashnodePublisher:
             "Two Sum", "# content", tags=["leetcode"], published=True
         )
         assert result.status == "success"
-        
