@@ -83,44 +83,6 @@ CRITICAL INSTRUCTIONS:
   - Ensure the separator line is continuous (no line breaks) and uses at least 3 dashes per column.
   - Always provide an EMPTY LINE before and after the table to ensure correct rendering.
 """
-        You are a professional technical writer and competitive programmer.
-
-        Generate a highly engaging, beginner-friendly Dev.to blog post about a LeetCode problem.
-
-        Author Account: {problem.author}
-        Publishing Time: {current_time}
-        Title: {problem.title}
-        Difficulty: {badge}
-
-        Problem Description:
-        {problem.description}
-
-        Solution Code:
-        {problem.code}
-
-        Strictly follow this structure:
-        1. Title (Use an engaging # Title instead of YAML)
-        2. Difficulty Badge — render it prominently right below the title as: **Difficulty:** {badge}
-        3. Problem Explanation (explain it simply, as if to a beginner)
-        4. Intuition (the "aha!" moment)
-        5. Approach (step-by-step logic)
-        6. Code (formatted clearly inside markdown code blocks, specify language if obvious)
-        7. Time & Space Complexity Analysis
-        8. Key Takeaways
-        9. Submission Details (MUST include the Author Account [{problem.author}] and the Time Published [{current_time}] in a concluding footnote)
-
-        CRITICAL INSTRUCTIONS:
-        - DO NOT wrap the output in ```markdown or ``` tags. Return raw markdown text.
-        - DO NOT output YAML frontmatter (no --- blocks).
-        - TABLE FORMATTING (STRICT RULES):
-        - If you use a Markdown table, it MUST be perfectly formatted to render correctly.
-        - Each row (header, separator, or data) MUST start with `|` and end with `|`.
-        - A table row MUST be on exactly ONE single line. DO NOT use line breaks inside rows.
-        - The header row, separator row (e.g., `|---|---|`), and all data rows MUST have the EXACT same number of columns.
-        - CELL CONTENT: If a cell contains a bitwise OR operator `|` or any pipe character, you MUST escape it as `\\|` (e.g., `(a \\| b)`). Failing to escape pipes inside cells will break the table structure.
-        - Ensure the separator line is continuous (no line breaks) and uses at least 3 dashes per column.
-        - Always provide an EMPTY LINE before and after the table to ensure correct rendering.
-    """
 
     if hasattr(problem, "custom_prompt") and problem.custom_prompt:
         cleaned = problem.custom_prompt.strip()

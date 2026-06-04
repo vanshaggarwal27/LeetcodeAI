@@ -1,0 +1,25 @@
+# Python backend — handled by ruff
+backend/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Minified files
+*.min.js
+*.min.css
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment files
+.env
+.env.*
+
+# Git
+.git/

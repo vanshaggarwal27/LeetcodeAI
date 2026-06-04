@@ -118,3 +118,93 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
     }
 });
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.type === 'PUBLISH_EDITED_BLOG') {
+        const { blog } = request;
+        chrome.storage.local.get({
+            publishingPlatforms: ['devto'],
+            publishAsDraft: false,
+            userEmail: null,
+            generatedProblemTitle: 'leetcode-blog'
+        }, async ({ publishingPlatforms, publishAsDraft, userEmail, generatedProblemTitle }) => {
+            if (!userEmail) {
+                const errMsg = 'Please set your email in the extension settings before publishing.';
+                chrome.runtime.sendMessage({ type: 'STATUS_UPDATE', message: errMsg, status: 'error' });
+                sendResponse({ success: false, error: errMsg });
+                return;
+            }
+            fetch(`${API_BASE_URL}/publish-blog`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-User-Email": userEmail },
+                body: JSON.stringify({
+                    title: generatedProblemTitle,
+                    content: blog,
+                    platforms: publishingPlatforms,
+                    publish_as_draft: publishAsDraft,
+                    author: "Anonymous Developer"
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success' || data.status === 'partial_success') {
+                    const platforms = data.data?.platforms || [];
+                    const postedPlatforms = platforms
+                        .filter(r => r.status === 'success').map(r => r.platform);
+                    const failedPlatforms = platforms
+                        .filter(r => r.status === 'error').map(r => r.platform);
+ 
+                    const entry = {
+                        title: generatedProblemTitle,
+                        date: new Date().toISOString(),
+                        platforms: postedPlatforms,
+                        status: data.status,
+                        author: "Anonymous Developer",
+                        user_email: userEmail,
+                    };
+ 
+                    const historyKey = `publishHistory_${userEmail}`;
+                    chrome.storage.local.get({ [historyKey]: [] }, (res) => {
+                        const history = (res[historyKey] || []).filter(h => h.title !== entry.title);
+                        history.unshift(entry);
+                        chrome.storage.local.set({ [historyKey]: history.slice(0, 100) });
+                    });
+ 
+                    fetch(`${API_BASE_URL}/dashboard/record`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "X-User-Email": userEmail },
+                        body: JSON.stringify(entry)
+                    }).catch(() => {});
+
+                    const successMsg = failedPlatforms.length > 0
+                        ? `Posted to ${postedPlatforms.join(', ')}; failed: ${failedPlatforms.join(', ')}`
+                        : postedPlatforms.length > 0
+                            ? `Posted to ${postedPlatforms.join(', ')}`
+                            : 'Posted';
+
+                    chrome.runtime.sendMessage({
+                        type: 'STATUS_UPDATE',
+                        message: successMsg,
+                        status: data.status === 'partial_success' ? 'warning' : 'success',
+                        platforms
+                    });
+                    sendResponse({ success: true, message: successMsg, data });
+                } else {
+                    const platformErrors = data.data?.platforms
+                        ?.filter(result => result.status === 'error')
+                        ?.map(result => `${result.platform}: ${result.message}`)
+                        ?.join('; ');
+                    const errMsg = platformErrors || data.message || JSON.stringify(data);
+                    chrome.runtime.sendMessage({ type: 'STATUS_UPDATE', message: 'Error: ' + errMsg, status: 'error' });
+                    sendResponse({ success: false, error: errMsg });
+                }
+            })
+            .catch(error => {
+                const errMsg = 'Network Error: ' + error.message;
+                chrome.runtime.sendMessage({ type: 'STATUS_UPDATE', message: errMsg, status: 'error' });
+                sendResponse({ success: false, error: errMsg });
+            });
+        });
+        return true;
+    }
+});

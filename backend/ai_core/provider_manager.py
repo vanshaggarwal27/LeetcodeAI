@@ -23,7 +23,9 @@ class ProviderManager:
         Selected provider is always tried first.
         """
 
-        selected_provider = (selected_provider or os.getenv("AI_PROVIDER", "gemini")).lower()
+        selected_provider = (
+            selected_provider or os.getenv("AI_PROVIDER", "gemini")
+        ).lower()
 
         fallback_order = [
             "gemini",

@@ -36,8 +36,8 @@ class TestPostToPlatform:
 
         await post_to_platform("Two Sum", "# Blog content here")
         call_kwargs = mock_devto_request["request"].call_args[1]
-        assert (
-            "# Blog content here" in (call_kwargs["json"]["article"]["body_markdown"])
+        assert "# Blog content here" in (
+            call_kwargs["json"]["article"]["body_markdown"]
         )
 
     async def test_devto_api_error_raises(self, mock_devto_request):
