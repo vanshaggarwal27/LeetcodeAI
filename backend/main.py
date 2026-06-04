@@ -99,6 +99,8 @@ def require_user(x_user_email: Optional[str]) -> str:
             status_code=401, detail="Missing or invalid X-User-Email header."
         )
     return x_user_email.lower().strip()
+
+
 class AuthCredentials(BaseModel):
     name: str | None = None
     email: str
@@ -236,7 +238,9 @@ async def get_optional_user(
 
 
 async def _settings_for_user(user_id: str) -> dict[str, Any]:
-    settings_doc = await db.integration_settings.find_one({"user_id": user_id}, {"_id": 0})
+    settings_doc = await db.integration_settings.find_one(
+        {"user_id": user_id}, {"_id": 0}
+    )
     if not settings_doc:
         return IntegrationSettings().model_dump()
     settings_doc.pop("user_id", None)
@@ -261,17 +265,23 @@ def _connected(settings_doc: dict[str, Any]) -> dict[str, bool]:
 
 def _token_for(user: dict[str, Any]) -> str:
     exp = datetime.now(timezone.utc) + timedelta(hours=TOKEN_TTL_HOURS)
-    return _sign_token({"sub": user["id"], "email": user["email"], "exp": exp.timestamp()})
+    return _sign_token(
+        {"sub": user["id"], "email": user["email"], "exp": exp.timestamp()}
+    )
 
 
 @app.post("/auth/register", response_model=AuthResponse, status_code=201)
 async def register(credentials: AuthCredentials):
     email = credentials.email.strip().lower()
     if len(credentials.password) < 8:
-        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
+        raise HTTPException(
+            status_code=400, detail="Password must be at least 8 characters."
+        )
     existing = await db.users.find_one({"email": email}, {"_id": 0})
     if existing:
-        raise HTTPException(status_code=409, detail="An account with this email already exists.")
+        raise HTTPException(
+            status_code=409, detail="An account with this email already exists."
+        )
 
     salt, password_hash = _hash_password(credentials.password)
     user = {
@@ -315,7 +325,9 @@ async def get_integration_settings(
     current_user: Annotated[dict[str, Any], Depends(get_current_user)],
 ):
     settings_doc = await _settings_for_user(current_user["id"])
-    return IntegrationSettingsResponse(**settings_doc, connected=_connected(settings_doc))
+    return IntegrationSettingsResponse(
+        **settings_doc, connected=_connected(settings_doc)
+    )
 
 
 @app.put("/settings/integrations", response_model=IntegrationSettingsResponse)
@@ -353,9 +365,9 @@ async def update_integration_settings(
             upsert=True,
         )
 
-    return IntegrationSettingsResponse(**settings_doc, connected=_connected(settings_doc))
-
-
+    return IntegrationSettingsResponse(
+        **settings_doc, connected=_connected(settings_doc)
+    )
 
 
 # -----------------------------
@@ -421,9 +433,7 @@ async def create_blog(
         overall_status = (
             "success"
             if len(successful) == len(platform_results)
-            else "partial_success"
-            if successful
-            else "error"
+            else "partial_success" if successful else "error"
         )
     except Exception as e:
         return {"status": "error", "message": f"Publishing failure: {str(e)}"}
@@ -477,6 +487,105 @@ async def create_blog(
         "status": overall_status,
         "data": {
             "blog_content": blog_content,
+            "platforms": platform_results,
+            "social": social_results,
+        },
+    }
+
+
+# -----------------------------
+# Publish Blog Endpoint
+# -----------------------------
+class EditedBlog(BaseModel):
+    title: str
+    content: str
+    author: str = "Anonymous Developer"
+    platforms: list[str] | None = None
+    publish_as_draft: bool = False
+    share_to_social: bool = True
+    tags: list[str] | None = None
+
+
+@app.post("/publish-blog")
+async def publish_blog(
+    blog: EditedBlog,
+    x_user_email: Optional[str] = Header(default=None),
+    current_user: Annotated[dict[str, Any] | None, Depends(get_optional_user)] = None,
+):
+    """
+    Accepts an edited blog and:
+    1. Publishes it to one or more configured platforms
+    """
+    user_email = require_user(x_user_email)
+
+    user_settings = await _settings_for_user(current_user["id"]) if current_user else {}
+
+    try:
+        platform_results = await publish_to_platforms(
+            blog.title,
+            blog.content,
+            platforms=blog.platforms or user_settings.get("publish_platforms"),
+            published=not blog.publish_as_draft,
+            tags=blog.tags,
+            credentials=user_settings,
+        )
+        successful = [r for r in platform_results if r.get("status") == "success"]
+        overall_status = (
+            "success"
+            if len(successful) == len(platform_results)
+            else "partial_success" if successful else "error"
+        )
+    except Exception as e:
+        return {"status": "error", "message": f"Publishing failure: {str(e)}"}
+
+    try:
+        record = PublishRecord(
+            title=blog.title,
+            date=datetime.now(timezone.utc).isoformat(),
+            platforms=[r["platform"] for r in successful],
+            status=overall_status,
+            author=blog.author,
+            user_email=user_email,
+        )
+
+        await db.problem_info.update_one(
+            {
+                "title": blog.title,
+                "author": blog.author,
+                "user_email": user_email,
+            },
+            {
+                "$set": record.model_dump(),
+            },
+            upsert=True,
+        )
+
+    except Exception as e:
+        print(f"Database logging failed: {e}")
+
+    social_results = []
+    if blog.share_to_social and successful:
+        post_url = None
+        for res in successful:
+            if res.get("url"):
+                post_url = res["url"]
+                break
+
+        if post_url:
+            try:
+                social_results = share_to_platforms(
+                    title=blog.title,
+                    post_url=post_url,
+                    tags=blog.tags,
+                    credentials=user_settings,
+                )
+            except Exception as e:
+                print(f"Social sharing failed: {e}")
+
+    return {
+        "status": overall_status,
+        "data": {
+            "blog_content": blog.content,
             "platforms": platform_results,
             "social": social_results,
         },

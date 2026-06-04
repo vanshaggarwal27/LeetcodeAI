@@ -289,11 +289,12 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
 
     const statusEl = document.getElementById('status');
 
-    // RESOLVED: combined both branches — startProgress() from fix branch, copyBtn from main
-    const btn = document.getElementById('generateBtn');
+const btn = document.getElementById('generateBtn');
     const copyBtn = document.getElementById('copyBtn');
 
     btn.disabled = true;
+    btn.innerText = "Generating...";
+    btn.style.cursor = "not-allowed";
     if (copyBtn) copyBtn.disabled = true;
 
     startProgress();
@@ -320,7 +321,10 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
             // RESOLVED: finishProgress from fix branch + copyBtn re-enable from main
             finishProgress(false);
             btn.disabled = false;
+            btn.innerText = "Generate Blog";
+            btn.style.cursor = "pointer";
             if (copyBtn) copyBtn.disabled = false;
+
             return;
         }
 
@@ -354,6 +358,8 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
                     // RESOLVED: finishProgress from fix branch + copyBtn re-enable from main
                     finishProgress(false);
                     btn.disabled = false;
+                    btn.innerText = "Generate Blog";
+                    btn.style.cursor = "pointer";
                     if (copyBtn) copyBtn.disabled = false;
                 }
 
@@ -370,6 +376,8 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
         // RESOLVED: finishProgress from fix branch + copyBtn re-enable from main
         finishProgress(false);
         btn.disabled = false;
+        btn.innerText = "Generate Blog";
+        btn.style.cursor = "pointer";
         if (copyBtn) copyBtn.disabled = false;
     }
 });
@@ -396,10 +404,10 @@ chrome.runtime.onMessage.addListener((request) => {
                     document.getElementById("status").innerText = "Blog generated successfully!";
 
                     finishProgress(true);
-
-                    // RESOLVED: kept copyBtn re-enable from main; btn handled by resetGenerationUI
                     const copyBtn = document.getElementById('copyBtn');
                     if (copyBtn) copyBtn.disabled = false;
+                    document.getElementById("generateBtn").innerText = "Generate Blog";
+                    document.getElementById("generateBtn").style.cursor = "pointer";
                 }
             }
         );
@@ -426,18 +434,27 @@ chrome.runtime.onMessage.addListener((request) => {
 
             statusEl.innerText = request.message || "Successfully posted";
             statusEl.className = "success-status";
+            btn.disabled = false;
+            btn.innerText = "Generate Blog";
+            btn.style.cursor = "pointer";
 
         } else if (request.status === 'error') {
             finishProgress(false);
             if (copyBtn) copyBtn.disabled = false;
 
             statusEl.className = "error-status";
+            btn.disabled = false;
+            btn.innerText = "Generate Blog";
+            btn.style.cursor = "pointer";
 
         } else if (request.status === 'warning') {
             finishProgress(true);
             if (copyBtn) copyBtn.disabled = false;
 
-            statusEl.className = "warning-status";
+statusEl.className = "warning-status";
+            btn.disabled = false;
+            btn.innerText = "Generate Blog";
+            btn.style.cursor = "pointer";
         }
     }
 });

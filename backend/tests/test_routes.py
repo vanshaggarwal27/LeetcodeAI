@@ -185,3 +185,82 @@ class TestGenerateBlogRoute:
         }
         client.post("/generate-blog", json=payload, headers=TEST_HEADERS)
         mock_post_to_platform.assert_called_once()
+
+
+class TestPublishBlogRoute:
+    def test_happy_path_returns_success(self, client, mock_post_to_platform):
+        """Publishing edited blog succeeds and returns success body."""
+        payload = {
+            "title": "Two Sum",
+            "content": "# Solved Two Sum!",
+            "author": "testuser",
+            "platforms": ["devto"],
+            "publish_as_draft": False,
+        }
+        response = client.post(
+            "/publish-blog",
+            json=payload,
+            headers=TEST_HEADERS,
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "success"
+        assert body["data"]["platforms"][0]["status"] == "success"
+        assert "dev.to" in body["data"]["platforms"][0]["url"]
+        mock_post_to_platform.assert_called_once()
+
+    def test_missing_required_fields_returns_422(self, client):
+        """Pydantic rejects publish-blog payloads missing required fields."""
+        payload = {
+            "title": "Two Sum",
+            # content is missing
+        }
+
+        response = client.post(
+            "/publish-blog",
+            json=payload,
+            headers=TEST_HEADERS,
+        )
+        assert response.status_code == 422
+
+
+class TestReminderRoutes:
+    def test_subscribe_valid_payload(self, client, mock_db):
+        """Valid subscription payload is accepted."""
+        payload = {
+            "name": "Test User",
+            "whatsapp_number": "+911234567890",
+            "reminder_time": "09:00",
+            "timezone": "Asia/Kolkata",
+            "is_opted_in": True,
+        }
+        response = client.post("/reminder/subscribe", json=payload)
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "success"
+
+    def test_subscribe_missing_field_returns_422(self, client):
+        """Pydantic rejects subscribe payload missing required field."""
+        payload = {
+            "reminder_time": "09:00",
+            # whatsapp_number missing
+        }
+        response = client.post("/reminder/subscribe", json=payload)
+        assert response.status_code == 422
+
+    def test_unsubscribe_valid_payload(self, client, mock_db):
+        """Valid unsubscribe request is accepted."""
+        payload = {"whatsapp_number": "+911234567890"}
+        response = client.post("/reminder/unsubscribe", json=payload)
+        assert response.status_code == 200
+
+    def test_unsubscribe_missing_key_raises(self, client, mock_db):
+        """
+        Known bug: missing whatsapp_number raises KeyError.
+        This test documents the current broken behavior.
+        If this test starts failing it means the bug was fixed
+         update the assertion accordingly.
+        """
+        payload = {}
+        with pytest.raises(Exception):
+            client.post("/reminder/unsubscribe", json=payload)

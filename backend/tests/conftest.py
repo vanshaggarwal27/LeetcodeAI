@@ -81,7 +81,9 @@ class FakeCollection:
 
     def find(self, *args, **kwargs):
         query = args[0] if args else {}
-        return FakeCursor([record for record in self.records if self._matches(record, query)])
+        return FakeCursor(
+            [record for record in self.records if self._matches(record, query)]
+        )
 
     def aggregate(self, *args, **kwargs):
         return FakeCursor([])

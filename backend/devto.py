@@ -137,7 +137,9 @@ class HashnodePublisher(BasePublisher):
     ) -> PublishResult:
         credentials = credentials or {}
         token = credentials.get("hashnode_token") or os.getenv("HASHNODE_TOKEN")
-        publication_id = credentials.get("hashnode_publication_id") or os.getenv("HASHNODE_PUBLICATION_ID")
+        publication_id = credentials.get("hashnode_publication_id") or os.getenv(
+            "HASHNODE_PUBLICATION_ID"
+        )
         if not token or not publication_id:
             raise PublisherError(
                 "Hashnode publishing requires HASHNODE_TOKEN and HASHNODE_PUBLICATION_ID."
@@ -253,7 +255,9 @@ class WebhookPublisher(BasePublisher):
         published: bool,
         credentials: dict[str, Any] | None = None,
     ) -> PublishResult:
-        webhook_url = (credentials or {}).get("blog_webhook_url") or os.getenv("BLOG_WEBHOOK_URL")
+        webhook_url = (credentials or {}).get("blog_webhook_url") or os.getenv(
+            "BLOG_WEBHOOK_URL"
+        )
         if not webhook_url:
             raise PublisherError("Personal blog publishing requires BLOG_WEBHOOK_URL.")
 

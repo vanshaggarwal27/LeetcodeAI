@@ -10,9 +10,9 @@ twilio_number = os.getenv("TWILIO_PHONE_NUMBER")
 client = Client(account_sid, auth_token)
 
 
-
 # Setup a clean logger for exception visibility
 logger = logging.getLogger(__name__)
+
 
 def make_call(to_number: str, audio_url: str = None, text_to_say: str = None):
     twilio_number = os.getenv("TWILIO_PHONE_NUMBER", "")
@@ -58,13 +58,13 @@ def make_call(to_number: str, audio_url: str = None, text_to_say: str = None):
 def send_whatsapp_message(to_number: str, body: str):
     # Use explicit WhatsApp number if set, otherwise default to Twilio Sandbox number
     whatsapp_from = os.getenv("TWILIO_WHATSAPP_NUMBER", "whatsapp:+14155238886")
-    formatted_to = to_number if to_number.startswith("whatsapp:") else f"whatsapp:{to_number}"
+    formatted_to = (
+        to_number if to_number.startswith("whatsapp:") else f"whatsapp:{to_number}"
+    )
 
     try:
         message = client.messages.create(
-            from_=whatsapp_from,
-            body=body,
-            to=formatted_to
+            from_=whatsapp_from, body=body, to=formatted_to
         )
         return message.sid
     except Exception as e:
