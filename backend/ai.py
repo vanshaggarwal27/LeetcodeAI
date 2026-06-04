@@ -42,7 +42,7 @@ def _build_prompt(problem, current_time: str) -> str:
     """
     badge = _difficulty_badge(getattr(problem, "difficulty", None) or "Unknown")
     custom_instructions = ""
-    badge = _difficulty_badge(getattr(problem, 'difficulty', 'Unknown'))
+    badge = _difficulty_badge(getattr(problem, "difficulty", "Unknown"))
 
     default_prompt = f"""
 You are a professional technical writer and competitive programmer.

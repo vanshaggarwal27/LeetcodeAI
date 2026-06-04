@@ -416,7 +416,9 @@ async def create_blog(
     user_settings = await _settings_for_user(current_user["id"]) if current_user else {}
 
     try:
-        blog_content = await run_in_threadpool(generate_blog, problem, credentials=user_settings)
+        blog_content = await run_in_threadpool(
+            generate_blog, problem, credentials=user_settings
+        )
     except Exception as e:
         return {"status": "error", "message": f"AI provider failure: {str(e)}"}
 
@@ -433,7 +435,9 @@ async def create_blog(
         overall_status = (
             "success"
             if len(successful) == len(platform_results)
-            else "partial_success" if successful else "error"
+            else "partial_success"
+            if successful
+            else "error"
         )
     except Exception as e:
         return {"status": "error", "message": f"Publishing failure: {str(e)}"}
@@ -533,7 +537,9 @@ async def publish_blog(
         overall_status = (
             "success"
             if len(successful) == len(platform_results)
-            else "partial_success" if successful else "error"
+            else "partial_success"
+            if successful
+            else "error"
         )
     except Exception as e:
         return {"status": "error", "message": f"Publishing failure: {str(e)}"}
@@ -803,4 +809,3 @@ async def unsubscribe(data: dict):
 # -----------------------------
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=10000, reload=True)
-
