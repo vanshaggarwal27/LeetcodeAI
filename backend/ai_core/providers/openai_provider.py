@@ -21,18 +21,20 @@ SDK_MAX_RETRIES = 0
 
 class OpenAIProvider(AIProvider):
 
-    def __init__(self):
-        api_key = os.getenv("OPENAI_API_KEY")
+    def __init__(self, api_key: str | None = None):
+        api_key = api_key or os.getenv("OPENAI_API_KEY")
 
         if not api_key:
             raise Exception("OPENAI_API_KEY is missing")
 
-        preferred_model = os.getenv("OPENAI_MODEL", DEFAULT_MODEL).strip() or DEFAULT_MODEL
-        fallback_model = os.getenv("OPENAI_FALLBACK_MODEL", DEFAULT_FALLBACK_MODEL).strip()
+        preferred_model = (
+            os.getenv("OPENAI_MODEL", DEFAULT_MODEL).strip() or DEFAULT_MODEL
+        )
+        fallback_model = os.getenv(
+            "OPENAI_FALLBACK_MODEL", DEFAULT_FALLBACK_MODEL
+        ).strip()
         self.models = tuple(
-            dict.fromkeys(
-                model for model in (preferred_model, fallback_model) if model
-            )
+            dict.fromkeys(model for model in (preferred_model, fallback_model) if model)
         )
         self.client = OpenAI(
             api_key=api_key,
@@ -84,9 +86,7 @@ class OpenAIProvider(AIProvider):
                     "The OpenAI API key does not have access to the requested model."
                 ) from exc
             except openai.RateLimitError as exc:
-                raise Exception(
-                    "OpenAI quota or rate limit exceeded."
-                ) from exc
+                raise Exception("OpenAI quota or rate limit exceeded.") from exc
             except (openai.APITimeoutError, openai.APIConnectionError) as exc:
                 raise Exception(
                     "OpenAI request timed out or could not connect."

@@ -1,3 +1,55 @@
+// ── Email setup ──────────────────────────────────────────────
+const MAIN_IDS = ['generateBtn','copyBtn','customPrompt',
+    '.input-group','.platform-panel','#exportSection',
+    '#previewSection','#progressContainer','#status','#dashboardBtn',
+    '.footer','h2','p'];
+
+function showEmailSetup() {
+    document.getElementById('emailSetup').style.display = 'flex';
+    document.getElementById('userBadge').style.display = 'none';
+    // hide main content while setup is shown
+    ['generateBtn','copyBtn','dashboardBtn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+    document.querySelectorAll('.input-group, .platform-panel, .button-group, .footer, #status, #exportSection, #previewSection, #progressContainer, h2, body > p')
+        .forEach(el => el.style.display = 'none');
+}
+
+function showMainUI(email) {
+    document.getElementById('emailSetup').style.display = 'none';
+    const badge = document.getElementById('userBadge');
+    badge.style.display = 'flex';
+    document.getElementById('userEmailDisplay').textContent = email;
+    // restore main content
+    ['generateBtn','copyBtn','dashboardBtn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = '';
+    });
+    document.querySelectorAll('.input-group, .platform-panel, .button-group, .footer, #status, h2, body > p')
+        .forEach(el => el.style.display = '');
+}
+
+document.getElementById('saveEmailBtn').addEventListener('click', () => {
+    const input = document.getElementById('emailInput');
+    const email = input.value.trim();
+    if (!email || !email.includes('@')) {
+        input.classList.add('invalid');
+        return;
+    }
+    input.classList.remove('invalid');
+    chrome.storage.local.set({ userEmail: email }, () => showMainUI(email));
+});
+
+document.getElementById('emailInput').addEventListener('input', function() {
+    this.classList.remove('invalid');
+});
+
+document.getElementById('changeEmailBtn').addEventListener('click', () => {
+    chrome.storage.local.remove('userEmail', showEmailSetup);
+});
+// ─────────────────────────────────────────────────────────────
+
 let generatedBlogMarkdown = "";
 let generatedProblemTitle = "";
 let generatedBlog = "";
@@ -135,6 +187,12 @@ async function copyBlogToClipboard() {
 // ================================================
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Check email on every open
+    chrome.storage.local.get({ userEmail: null }, ({ userEmail }) => {
+        if (userEmail) showMainUI(userEmail);
+        else showEmailSetup();
+    });
+
 
     const statusEl = document.getElementById('status');
     const platformInputs = Array.from(document.querySelectorAll('input[name="platform"]'));
@@ -191,12 +249,39 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.getElementById("exportSection").style.display = "block";
                 document.getElementById("previewSection").style.display = "block";
                 document.getElementById("blogEditor").value = generatedBlog;
+                statusEl.innerText = "Publishing automation active";
             } else {
                 statusEl.innerText = "Ready to generate blog";
                 statusEl.className = "";
             }
         }
     );
+
+    // Load and render recent posts history
+    chrome.storage.local.get({ publishHistory: [] }, ({ publishHistory }) => {
+        const listEl = document.getElementById('historyList');
+        if (listEl) {
+            if (!publishHistory.length) {
+                listEl.innerHTML = '<div class="history-empty">No posts yet. Generate your first blog! ✍️</div>';
+                return;
+            }
+            listEl.innerHTML = publishHistory.map(entry => {
+                const date = new Date(entry.publishedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+                const platforms = (entry.platforms || []).join(', ') || 'unknown';
+                return `<div class="history-item" data-url="${entry.url || ''}">
+                    <div class="history-item-title">${entry.title}</div>
+                    <div class="history-item-meta">${date} &middot; ${platforms}</div>
+                </div>`;
+            }).join('');
+
+            listEl.querySelectorAll('.history-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const url = item.dataset.url;
+                    if (url) chrome.tabs.create({ url });
+                });
+            });
+        }
+    });
 });
 
 // Generate button
@@ -204,11 +289,12 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
 
     const statusEl = document.getElementById('status');
 
-    // RESOLVED: combined both branches — startProgress() from fix branch, copyBtn from main
-    const btn = document.getElementById('generateBtn');
+const btn = document.getElementById('generateBtn');
     const copyBtn = document.getElementById('copyBtn');
 
     btn.disabled = true;
+    btn.innerText = "Generating...";
+    btn.style.cursor = "not-allowed";
     if (copyBtn) copyBtn.disabled = true;
 
     startProgress();
@@ -235,7 +321,10 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
             // RESOLVED: finishProgress from fix branch + copyBtn re-enable from main
             finishProgress(false);
             btn.disabled = false;
+            btn.innerText = "Generate Blog";
+            btn.style.cursor = "pointer";
             if (copyBtn) copyBtn.disabled = false;
+
             return;
         }
 
@@ -269,6 +358,8 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
                     // RESOLVED: finishProgress from fix branch + copyBtn re-enable from main
                     finishProgress(false);
                     btn.disabled = false;
+                    btn.innerText = "Generate Blog";
+                    btn.style.cursor = "pointer";
                     if (copyBtn) copyBtn.disabled = false;
                 }
 
@@ -285,6 +376,8 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
         // RESOLVED: finishProgress from fix branch + copyBtn re-enable from main
         finishProgress(false);
         btn.disabled = false;
+        btn.innerText = "Generate Blog";
+        btn.style.cursor = "pointer";
         if (copyBtn) copyBtn.disabled = false;
     }
 });
@@ -311,10 +404,10 @@ chrome.runtime.onMessage.addListener((request) => {
                     document.getElementById("status").innerText = "Blog generated successfully!";
 
                     finishProgress(true);
-
-                    // RESOLVED: kept copyBtn re-enable from main; btn handled by resetGenerationUI
                     const copyBtn = document.getElementById('copyBtn');
                     if (copyBtn) copyBtn.disabled = false;
+                    document.getElementById("generateBtn").innerText = "Generate Blog";
+                    document.getElementById("generateBtn").style.cursor = "pointer";
                 }
             }
         );
@@ -341,18 +434,27 @@ chrome.runtime.onMessage.addListener((request) => {
 
             statusEl.innerText = request.message || "Successfully posted";
             statusEl.className = "success-status";
+            btn.disabled = false;
+            btn.innerText = "Generate Blog";
+            btn.style.cursor = "pointer";
 
         } else if (request.status === 'error') {
             finishProgress(false);
             if (copyBtn) copyBtn.disabled = false;
 
             statusEl.className = "error-status";
+            btn.disabled = false;
+            btn.innerText = "Generate Blog";
+            btn.style.cursor = "pointer";
 
         } else if (request.status === 'warning') {
             finishProgress(true);
             if (copyBtn) copyBtn.disabled = false;
 
-            statusEl.className = "warning-status";
+statusEl.className = "warning-status";
+            btn.disabled = false;
+            btn.innerText = "Generate Blog";
+            btn.style.cursor = "pointer";
         }
     }
 });
