@@ -1,5 +1,3 @@
-import pytest
-
 """
 Integration tests for FastAPI route handlers.
 All external API calls are mocked via conftest.py fixtures.
@@ -266,6 +264,6 @@ class TestReminderRoutes:
         failing it means the bug was fixed, update the assertion accordingly.
         """
         payload = {}
+        # Force fresh commit trigger
         response = client.post("/reminder/unsubscribe", json=payload)
         assert response.status_code == 422
-        
