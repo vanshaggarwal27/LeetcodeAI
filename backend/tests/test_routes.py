@@ -1,3 +1,5 @@
+import pytest
+
 """
 Integration tests for FastAPI route handlers.
 All external API calls are mocked via conftest.py fixtures.
@@ -258,13 +260,11 @@ class TestReminderRoutes:
         assert response.status_code == 200
 
     def test_unsubscribe_missing_key_raises(self, client, mock_db):
-        """Known bug: missing whatsapp_number raises an error.
+        """Known bug: missing whatsapp_number raises KeyError.
 
         This test documents the current broken behavior. If this test starts
         failing it means the bug was fixed, update the assertion accordingly.
         """
         payload = {}
-        try:
+        with pytest.raises(Exception):
             client.post("/reminder/unsubscribe", json=payload)
-        except Exception:
-            pass  # Successfully caught the error as expected by the test
