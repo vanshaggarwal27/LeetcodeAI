@@ -256,12 +256,12 @@ class TestReminderRoutes:
         response = client.post("/reminder/unsubscribe", json=payload)
         assert response.status_code == 200
 
-    def test_unsubscribe_missing_key_raises(self, client, mock_db):
+  def test_unsubscribe_missing_key_raises(self, client, mock_db):
         """Known bug: missing whatsapp_number raises KeyError.
 
         This test documents the current broken behavior. If this test starts
         failing it means the bug was fixed, update the assertion accordingly.
         """
         payload = {}
-        with pytest.raises(Exception):
+        with pytest.raises(KeyError):
             client.post("/reminder/unsubscribe", json=payload)
