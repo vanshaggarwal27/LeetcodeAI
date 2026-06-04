@@ -177,7 +177,10 @@ class TestGenerateBlogRoute:
     ):
         """Verify post_to_platform is called with the correct title."""
         mock_generate_blog.return_value = "Mocked blog content generation output"
-        mock_post_to_platform.return_value = {"status": "success", "url": "https://dev.to/test"}
+        mock_post_to_platform.return_value = {
+            "status": "success",
+            "url": "https://dev.to/test",
+        }
 
         payload = {
             "title": "Two Sum",
@@ -256,7 +259,7 @@ class TestReminderRoutes:
         response = client.post("/reminder/unsubscribe", json=payload)
         assert response.status_code == 200
 
-  def test_unsubscribe_missing_key_raises(self, client, mock_db):
+    def test_unsubscribe_missing_key_raises(self, client, mock_db):
         """Known bug: missing whatsapp_number raises KeyError.
 
         This test documents the current broken behavior. If this test starts
