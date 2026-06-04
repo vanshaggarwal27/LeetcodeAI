@@ -50,7 +50,24 @@ async def check_user_progress_and_alert(user, today):
     await process_single_user(user, today)
 
 
-# --- YOUR PARALLELIZED IMPLEMENTATION CONTEXT ---
+# --- MAIN SCHEDULER (PARALLELIZED LOGIC) ---
+
+async def _check_unsolved_users_async():
+    """Main driver called by the scheduler to pull users and check them concurrently."""
+    today = datetime.now(timezone.utc).date()
+    users = await find_due_reminder_users()
+
+    if not users:
+        return
+
+    # Create parallel tasks using list comprehension
+    tasks = [process_single_user(user, today) for user in users]
+
+    # Run all workflows concurrently using asyncio.gather
+    await asyncio.gather(*tasks)
+
+
+# --- WORKER LOGIC ---
 
 async def process_single_user(user, today):
     """Worker function to process progress checking and alerts for a single user."""
@@ -97,5 +114,3 @@ async def process_single_user(user, today):
     if not has_solved:
         name = user.get("name", "User")
         generate_message(name)
-
-
