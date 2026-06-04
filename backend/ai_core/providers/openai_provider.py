@@ -20,7 +20,6 @@ SDK_MAX_RETRIES = 0
 
 
 class OpenAIProvider(AIProvider):
-
     def __init__(self, api_key: str | None = None):
         api_key = api_key or os.getenv("OPENAI_API_KEY")
 

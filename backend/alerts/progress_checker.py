@@ -14,6 +14,7 @@ db = mongo_client.leetcodeai
 
 # --- ORIGINAL UNTOUCHED FUNCTIONS REQUIRING IMPORT BY PYTEST ---
 
+
 def due_timezones(current_time: datetime = None) -> list[str]:
     """Find target timezones where the local time matches the alert schedule window."""
     if current_time is None:
@@ -38,10 +39,9 @@ async def find_due_reminder_users(target_hour: int = 23) -> list:
     now_utc = datetime.now(timezone.utc)
     valid_timezones = due_timezones(now_utc)
 
-    cursor = db.preferences.find({
-        "is_opted_in": True,
-        "timezone": {"$in": valid_timezones}
-    })
+    cursor = db.preferences.find(
+        {"is_opted_in": True, "timezone": {"$in": valid_timezones}}
+    )
     return await cursor.to_list(length=1000)
 
 
@@ -51,6 +51,7 @@ async def check_user_progress_and_alert(user, today):
 
 
 # --- MAIN SCHEDULER (PARALLELIZED LOGIC) ---
+
 
 async def _check_unsolved_users_async():
     """Main driver called by the scheduler to pull users and check them concurrently."""
@@ -69,6 +70,7 @@ async def _check_unsolved_users_async():
 
 # --- WORKER LOGIC ---
 
+
 async def process_single_user(user, today):
     """Worker function to process progress checking and alerts for a single user."""
     phone = user.get("whatsapp_number")
@@ -76,14 +78,15 @@ async def process_single_user(user, today):
         return
 
     today_str = today.isoformat()
-    solved_today_count = await db.problem_info.count_documents({
-        "date": {"$regex": f"^{today_str}"}
-    })
+    solved_today_count = await db.problem_info.count_documents(
+        {"date": {"$regex": f"^{today_str}"}}
+    )
     has_solved = solved_today_count > 0
 
     lc_username = user.get("leetcode_username", "vanshaggarwal27")
     if not has_solved and lc_username:
         try:
+
             def check_lc():
                 query = """
                 query($username: String!, $limit: Int!) {
@@ -92,15 +95,21 @@ async def process_single_user(user, today):
                   }
                 }
                 """
-                return requests.post("https://leetcode.com/graphql", json={
-                    "query": query,
-                    "variables": {"username": lc_username, "limit": 10}
-                }, timeout=10).json()
+                return requests.post(
+                    "https://leetcode.com/graphql",
+                    json={
+                        "query": query,
+                        "variables": {"username": lc_username, "limit": 10},
+                    },
+                    timeout=10,
+                ).json()
 
             data = await asyncio.to_thread(check_lc)
             submissions = data.get("data", {}).get("recentAcSubmissionList", [])
 
-            midnight_utc = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+            midnight_utc = datetime.now(timezone.utc).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
             midnight_timestamp = int(midnight_utc.timestamp())
 
             for sub in submissions:
@@ -114,4 +123,3 @@ async def process_single_user(user, today):
     if not has_solved:
         name = user.get("name", "User")
         generate_message(name)
-

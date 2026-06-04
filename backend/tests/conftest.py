@@ -107,7 +107,6 @@ class FakeCollection:
         return True
 
 
-
 class FakeProblemInfoCollection:
     def __init__(self) -> None:
         self.find_one = AsyncMock(return_value=None)
