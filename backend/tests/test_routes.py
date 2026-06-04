@@ -1,5 +1,3 @@
-import pytest
-
 """
 Integration tests for FastAPI route handlers.
 All external API calls are mocked via conftest.py fixtures.
@@ -270,4 +268,3 @@ class TestReminderRoutes:
             client.post("/reminder/unsubscribe", json=payload)
         except Exception:
             pass  # Successfully caught the error as expected by the test
-        
