@@ -73,7 +73,7 @@ class Problem(BaseModel):
     code: str
     author: str = "Anonymous Developer"
     difficulty: str | None = None
-    language: str | None = None        # ← ADD THIS LINE
+    language: str | None = None
     client_time: str | None = None
     custom_prompt: str | None = None
     platforms: list[str] | None = None
