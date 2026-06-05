@@ -75,11 +75,11 @@ class Problem(BaseModel):
     client_time: str = None  # Optional client time string
     custom_prompt: str = None  # custom_prompt for the user
     difficulty: str = "Unknown"  # difficulty level of the problem
+    language: str = "python"    # programming language of the solution
     platforms: list[str] | None = None
     publish_as_draft: bool = False
     share_to_social: bool = True
     tags: list[str] | None = None
-
 
 class EfficiencyRequest(BaseModel):
     title: str
