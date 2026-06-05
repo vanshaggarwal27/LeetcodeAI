@@ -30,12 +30,11 @@
                 document.querySelector('[data-track-load="description_content"]') ||
                 document.querySelector('div[class*="question-content"]');
             const description = descriptionElement ? descriptionElement.innerText : "No description found.";
-            // Extract difficulty badge 
-            const difficultyElement = document.querySelector('.difficulty') ||
-                document.querySelector('.text-difficuly-easy') ||
-                document.querySelector('.text-difficuly-medium') ||
-                document.querySelector('.text-difficuly-hard');
-            const difficulty = difficultyElement ? difficultyElement.innerText.trim() : "Unknown Difficulty";
+            // Extract difficulty badge
+            const difficultyElement = document.querySelector('[class*="difficulty"]') ||
+                document.querySelector('[class*="Difficulty"]');
+
+            const difficulty = difficultyElement ? difficultyElement.innerText.trim() : "Unknown";
 
             let code = "";
             const viewLines = document.querySelector('.view-lines');
@@ -78,7 +77,7 @@
             // Send to background script
             chrome.runtime.sendMessage({
                 type: 'GENERATE_BLOG',
-                payload: { title, description, code, author, client_time, custom_prompt, difficulty } // add custom_prompt and difficulty
+                payload: { title, description, code, author, client_time, custom_prompt, difficulty, language }
             });
 
 
@@ -147,7 +146,7 @@
                 triggerBlogGeneration();
             }
 
-        } 
+        }
     });
 
     observer.observe(document.body, {
