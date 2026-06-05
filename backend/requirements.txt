@@ -23,4 +23,7 @@ pytest-mock
 responses
 ruff
 
+redis
+fakeredis
+
 tweepy==4.15.0

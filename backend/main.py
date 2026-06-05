@@ -1,5 +1,6 @@
 import base64
 import hashlib
+import uuid
 import hmac
 import json
 import os
@@ -21,11 +22,16 @@ from twilio.rest import Client
 # --- UPDATED AI PATH ---
 from ai_core.blog_generator import generate_blog, generate_tags
 from devto import publish_to_platforms
+from utils.redis_helper import RedisHelper
 from models.reminder import PublishRecord
 from services.reminder_scheduler import start_scheduler
 from social import share_to_platforms
 
 load_dotenv()
+
+# Idempotency configuration
+IDEMP_TTL = int(os.getenv("IDEMPOTENCY_TTL_SECONDS", "300"))
+redis_helper = RedisHelper()
 
 
 @asynccontextmanager
@@ -193,6 +199,11 @@ def _hash_password(password: str, salt: str | None = None) -> tuple[str, str]:
     salt = salt or secrets.token_hex(16)
     digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 120_000)
     return salt, digest.hex()
+
+def _make_idempotency_key(title: str, author: str, platforms: list[str] | None, draft: bool) -> str:
+    base = f"{title}|{author}|{sorted(platforms) if platforms else []}|{draft}"
+    digest = hashlib.sha256(base.encode()).hexdigest()
+    return f"idemp:{digest}"
 
 
 def _verify_password(password: str, salt: str, expected_hash: str) -> bool:
@@ -393,6 +404,16 @@ async def create_blog(
     2. Publishes it to one or more configured platforms
     """
     user_email = require_user(x_user_email)
+    user_settings = await _settings_for_user(current_user["id"]) if current_user else {}
+    # Idempotency check for blog generation
+    idempotency_key = _make_idempotency_key(
+        problem.title,
+        problem.author,
+        problem.platforms or user_settings.get("publish_platforms"),
+        problem.publish_as_draft,
+    )
+    if redis_helper.exists(idempotency_key):
+        return {"status": "duplicate", "message": "Duplicate publish request detected (idempotency)."}
     # Check if the user has already published a successful blog for this problem
     existing_record = await db.problem_info.find_one(
         {"title": problem.title, "author": problem.author, "status": "success"}
@@ -449,6 +470,8 @@ async def create_blog(
             if len(successful) == len(platform_results)
             else "partial_success" if successful else "error"
         )
+        # Store idempotency result after successful publish
+        redis_helper.setex(idempotency_key, IDEMP_TTL, json.dumps({"status": overall_status, "platforms": platform_results}))
     except Exception as e:
         return {"status": "error", "message": f"Publishing failure: {str(e)}"}
 
@@ -531,8 +554,17 @@ async def publish_blog(
     1. Publishes it to one or more configured platforms
     """
     user_email = require_user(x_user_email)
-
     user_settings = await _settings_for_user(current_user["id"]) if current_user else {}
+    # Idempotency check for edited blog publish
+    idempotency_key = _make_idempotency_key(
+        blog.title,
+        blog.author,
+        blog.platforms or user_settings.get("publish_platforms"),
+        blog.publish_as_draft,
+    )
+    if redis_helper.exists(idempotency_key):
+        return {"status": "duplicate", "message": "Duplicate publish request detected (idempotency)."}
+
 
     try:
         platform_results = await publish_to_platforms(
@@ -549,6 +581,8 @@ async def publish_blog(
             if len(successful) == len(platform_results)
             else "partial_success" if successful else "error"
         )
+        # Store idempotency result for edited blog publish
+        redis_helper.setex(idempotency_key, IDEMP_TTL, json.dumps({"status": overall_status, "platforms": platform_results}))
     except Exception as e:
         return {"status": "error", "message": f"Publishing failure: {str(e)}"}
 
