@@ -1,5 +1,6 @@
 import os
 import redis
+import hashlib
 
 class RedisHelper:
     """Thin wrapper around redis-py for idempotency storage."""
@@ -25,4 +26,19 @@ class RedisHelper:
         self.client.setex(key, ttl, value)
 
     def get(self, key: str) -> str | None:
-        return self.client.get(key)
+        value = self.client.get(key)
+        if isinstance(value, bytes):
+            return value.decode()
+        return value
+
+
+
+
+def _make_idempotency_key(title, author, platforms, draft):
+    """Generate deterministic idempotency key.
+    Returns a string of the form "idemp:{digest}:{uuid_part}".
+    """
+    base = f"{title}|{author}|{sorted(platforms) or []}|{draft}"
+    digest = hashlib.sha256(base.encode()).hexdigest()
+    uuid_part = hashlib.sha256(base.encode()).hexdigest()[:32]
+    return f"idemp:{digest}:{uuid_part}"

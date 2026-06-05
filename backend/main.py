@@ -22,7 +22,7 @@ from twilio.rest import Client
 # --- UPDATED AI PATH ---
 from ai_core.blog_generator import generate_blog, generate_tags
 from devto import publish_to_platforms
-from utils.redis_helper import RedisHelper
+from utils.redis_helper import RedisHelper, _make_idempotency_key
 from models.reminder import PublishRecord
 from services.reminder_scheduler import start_scheduler
 from social import share_to_platforms
@@ -473,7 +473,33 @@ async def create_blog(
         # Store idempotency result after successful publish
         redis_helper.setex(idempotency_key, IDEMP_TTL, json.dumps({"status": overall_status, "platforms": platform_results}))
     except Exception as e:
-        return {"status": "error", "message": f"Publishing failure: {str(e)}"}
+        error_msg = str(e)
+        attempted_platforms = problem.platforms or user_settings.get("publish_platforms") or []
+        fail_record = PublishRecord(
+            title=problem.title,
+            date=datetime.now(timezone.utc).isoformat(),
+            platforms=[],
+            status="error",
+            author=problem.author,
+            user_email=user_email,
+            error_message=error_msg,
+            failed_platforms=attempted_platforms,
+            attempted_at=datetime.now(timezone.utc).isoformat(),
+            recovery_eligible=True,
+        )
+        try:
+            await db.problem_info.update_one(
+                {
+                    "title": problem.title,
+                    "author": problem.author,
+                    "user_email": user_email,
+                },
+                {"$set": fail_record.model_dump()},
+                upsert=True,
+            )
+        except Exception as db_e:
+            print(f"Database logging failed for failure record: {db_e}")
+        return {"status": "error", "message": f"Publishing failure: {error_msg}"}
 
     try:
         record = PublishRecord(
@@ -483,6 +509,10 @@ async def create_blog(
             status=overall_status,
             author=problem.author,
             user_email=user_email,
+            error_message=None,
+            failed_platforms=[],
+            attempted_at=datetime.now(timezone.utc).isoformat(),
+            recovery_eligible=False,
         )
 
         await db.problem_info.update_one(

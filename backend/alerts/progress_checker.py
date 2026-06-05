@@ -229,6 +229,7 @@ async def enqueue_due_reminders(now_utc: datetime | None = None) -> dict:
         # Check if there is a blog post created today
         # Date is stored as ISO format string, we can do a regex or range query
         # Since it's stored as '2026-05-23T...', we can do a prefix match
+        today = datetime.now(timezone.utc)
         today_str = today.isoformat()
 
         solved_today_count = await db.problem_info.count_documents({
