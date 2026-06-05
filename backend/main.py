@@ -151,13 +151,16 @@ async def create_blog(problem: Problem):
         return {"status": "error", "message": "Code is empty, cannot generate blog."}
 
     try:
-        blog_content = await run_in_threadpool(generate_blog, problem)
-
+        blog_content = await run_in_threadpool(generate_blog, problem, credentials=user_settings)
+        efficiency = await run_in_threadpool(
+            rate_code_efficiency,
+            problem.title,
+            problem.code,
+            problem.language or "python"   # ← passes real language, not hardcoded
+        )
     except Exception as e:
-        return {
-            "status": "error",
-            "message": f"AI provider failure: {str(e)}"
-        }
+        return {"status": "error", "message": f"AI provider failure: {str(e)}"}
+        
 
     try:
         platform_results = await publish_to_platforms(
@@ -221,6 +224,7 @@ async def create_blog(problem: Problem):
         "status": overall_status,
         "data": {
             "blog_content": blog_content,
+            "efficiency": efficiency,
             "platforms": platform_results,
             "social": social_results,
         },
