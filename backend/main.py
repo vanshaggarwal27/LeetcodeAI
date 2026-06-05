@@ -72,10 +72,10 @@ class Problem(BaseModel):
     description: str
     code: str
     author: str = "Anonymous Developer"
-    client_time: str = None  # Optional client time string
-    custom_prompt: str = None  # custom_prompt for the user
-    difficulty: str = "Unknown"  # difficulty level of the problem
-    language: str = "python"    # programming language of the solution
+    difficulty: str | None = None
+    language: str | None = None        # ← ADD THIS LINE
+    client_time: str | None = None
+    custom_prompt: str | None = None
     platforms: list[str] | None = None
     publish_as_draft: bool = False
     share_to_social: bool = True
