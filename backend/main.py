@@ -203,7 +203,8 @@ def _hash_password(password: str, salt: str | None = None) -> tuple[str, str]:
 def _make_idempotency_key(title: str, author: str, platforms: list[str] | None, draft: bool) -> str:
     base = f"{title}|{author}|{sorted(platforms) if platforms else []}|{draft}"
     digest = hashlib.sha256(base.encode()).hexdigest()
-    return f"idemp:{digest}"
+    uuid_part = hashlib.sha256(base.encode()).hexdigest()[:32]
+    return f"idemp:{digest}:{uuid_part}"
 
 
 def _verify_password(password: str, salt: str, expected_hash: str) -> bool:
