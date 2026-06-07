@@ -66,3 +66,84 @@ async def test_enqueue_due_reminders_dedupes_jobs(app_module, mocker):
     assert first["queued"] == 1
     assert second["queued"] == 0
     task.assert_called_once_with("due-user")
+@pytest.mark.asyncio
+async def test_find_due_reminder_users_skips_null_timezone(app_module):
+    from alerts import progress_checker
+
+    app_module.db.preferences.records.append(
+        {
+            "user_id": "user1",
+            "is_opted_in": True,
+            "timezone": None,
+            "whatsapp_number": "+911234567890",
+        }
+    )
+
+    progress_checker.db = app_module.db
+
+    users = await progress_checker.find_due_reminder_users(
+        datetime(2026, 1, 1, 17, 30, tzinfo=timezone.utc)
+    )
+
+    assert users == []
+
+@pytest.mark.asyncio
+async def test_find_due_reminder_users_skips_empty_timezone(app_module):
+    from alerts import progress_checker
+
+    app_module.db.preferences.records.append(
+        {
+            "user_id": "user1",
+            "is_opted_in": True,
+            "timezone": "",
+            "whatsapp_number": "+911234567890",
+        }
+    )
+
+    progress_checker.db = app_module.db
+
+    users = await progress_checker.find_due_reminder_users(
+        datetime(2026, 1, 1, 17, 30, tzinfo=timezone.utc)
+    )
+
+    assert users == []
+@pytest.mark.asyncio
+async def test_find_due_reminder_users_skips_missing_whatsapp(app_module):
+    from alerts import progress_checker
+
+    app_module.db.preferences.records.append(
+        {
+            "user_id": "user1",
+            "is_opted_in": True,
+            "timezone": "Asia/Kolkata",
+            "whatsapp_number": None,
+        }
+    )
+
+    progress_checker.db = app_module.db
+
+    users = await progress_checker.find_due_reminder_users(
+        datetime(2026, 1, 1, 17, 30, tzinfo=timezone.utc)
+    )
+
+    assert users == []
+@pytest.mark.asyncio
+async def test_find_due_reminder_users_skips_invalid_timezone(app_module):
+    from alerts import progress_checker
+
+    app_module.db.preferences.records.append(
+        {
+            "user_id": "user1",
+            "is_opted_in": True,
+            "timezone": "INVALID_TIMEZONE",
+            "whatsapp_number": "+911234567890",
+        }
+    )
+
+    progress_checker.db = app_module.db
+
+    users = await progress_checker.find_due_reminder_users(
+        datetime(2026, 1, 1, 17, 30, tzinfo=timezone.utc)
+    )
+
+    assert users == []
