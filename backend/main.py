@@ -37,6 +37,9 @@ from models.reminder import PublishRecord
 from services.reminder_scheduler import start_scheduler
 from services.complexity_analyzer import analyze_code
 from social import share_to_platforms
+from services.credential_service import resolve_user_credentials
+from utils.crypto import encrypt
+from models.user import PlatformCredential
 
 load_dotenv()
 
