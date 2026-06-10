@@ -3,8 +3,6 @@
 import httpx
 import pytest
 
-import main
-
 pytestmark = pytest.mark.asyncio(loop_scope="package")
 
 
@@ -27,9 +25,9 @@ async def cleanup_database_before_test(app_module):
 
 class TestAuthSettingsRoutes:
 
-    async def test_register_login_and_update_integrations(self):
+    async def test_register_login_and_update_integrations(self, app_module):
         """End-to-End verification of auth, session access, and system updates."""
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=main.app), base_url="http://test") as client:
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app_module.app), base_url="http://test") as client:
 
             # 1. Registration Test
             register_payload = {
@@ -80,11 +78,11 @@ class TestAuthSettingsRoutes:
             assert body["connected"]["whatsapp"] is True
 
             # 4. State Document Validation Check
-            user_doc = await main.db.users.find_one({"email": "test@example.com"})
+            user_doc = await app_module.db.users.find_one({"email": "test@example.com"})
             assert user_doc is not None
 
-    async def test_settings_requires_authentication(self):
+    async def test_settings_requires_authentication(self, app_module):
         """Verify endpoint blocks requests missing a valid Bearer token."""
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=main.app), base_url="http://test") as client:
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app_module.app), base_url="http://test") as client:
             response = await client.get("/settings/integrations")
             assert response.status_code == 401

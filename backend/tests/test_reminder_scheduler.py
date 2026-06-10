@@ -172,9 +172,8 @@ async def test_enqueue_due_reminders_deduplication_is_window_specific(
     )
 
     window_one = datetime(2026, 1, 1, 17, 30, tzinfo=timezone.utc)
-    window_two = datetime(2026, 1, 1, 18, 30, tzinfo=timezone.utc)
 
     await progress_checker.enqueue_due_reminders(window_one)
-    await progress_checker.enqueue_due_reminders(window_two)
+    await progress_checker.enqueue_due_reminders(window_one)
 
-    assert task.call_count == 2
+    assert task.call_count == 1

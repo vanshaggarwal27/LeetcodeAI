@@ -51,6 +51,7 @@ class FakeCollection:
         self.find_one = AsyncMock(side_effect=self._find_one)
         self.count_documents = AsyncMock(side_effect=self._count_documents)
         self.delete_many = AsyncMock(side_effect=self._delete_many)
+        self.delete_one = AsyncMock(side_effect=self._delete_one)
 
     async def _find_one(self, query, *args, **kwargs):
         for record in self.records:
@@ -111,6 +112,13 @@ class FakeCollection:
         self.records = [r for r in self.records if not self._matches(r, query)]
         return Mock(deleted_count=initial_count - len(self.records))
 
+    async def _delete_one(self, query, *args, **kwargs):
+        for i, r in enumerate(self.records):
+            if self._matches(r, query):
+                del self.records[i]
+                return Mock(deleted_count=1)
+        return Mock(deleted_count=0)
+
     def find(self, *args, **kwargs):
         query = args[0] if args else {}
         return FakeCursor(
@@ -153,6 +161,7 @@ class FakeDatabase:
         self.integration_settings = FakeCollection()
         self.reminder_jobs = FakeCollection()
         self.reminder_alerts = FakeCollection()
+        self.locks = FakeCollection()
 
 
 class FakeMotorClient:

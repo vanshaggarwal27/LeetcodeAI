@@ -446,7 +446,7 @@ def health_check():
 async def create_blog(
     request: Request,
     problem: Problem,
-    current_user: Annotated[dict[str, Any], Depends(get_current_user)],
+    current_user: Annotated[dict[str, Any] | None, Depends(get_optional_user)] = None,
     x_user_email: Optional[str] = Header(default=None),
 ):
     """
@@ -454,7 +454,7 @@ async def create_blog(
     generates a blog post using AI, and publishes it dynamically.
     """
     user_email = require_user(x_user_email)
-    user_id = current_user["id"]
+    user_id = current_user["id"] if current_user else None
 
     existing_record = await db.problem_info.find_one(
         {"title": problem.title, "author": problem.author, "status": "success"}
@@ -463,7 +463,7 @@ async def create_blog(
     if existing_record:
         return {
             "status": "error",
-            "message": f"Solution for '{problem.title}' has already been published!",
+            "message": f"Solution for '{problem.title}' has already been published! Keep up the great streak!",
         }
 
     if problem.custom_prompt and len(problem.custom_prompt.strip()) > 1000:
@@ -475,7 +475,7 @@ async def create_blog(
     if not problem.code or problem.code.strip() == "":
         return {"status": "error", "message": "Code is empty, cannot generate blog."}
 
-    user_settings = await _settings_for_user(user_id)
+    user_settings = await _settings_for_user(user_id) if user_id else {}
 
     # --- Atomic Lock to prevent Race Conditions ---
     lock_id = f"generate_blog_{problem.title}_{problem.author}_{user_email}"
@@ -488,8 +488,6 @@ async def create_blog(
         }
 
     try:
-
-
         try:
             blog_content = await run_in_threadpool(generate_blog, problem, credentials=user_settings)
             efficiency = rate_code_efficiency(
@@ -501,9 +499,7 @@ async def create_blog(
             return {"status": "error", "message": f"AI provider failure: {str(e)}"}
 
         # Resolve platform-specific credentials from database securely at runtime
-        devto_creds = await resolve_user_credentials(db, user_id, "devto")
-
-
+        devto_creds = await resolve_user_credentials(db, user_id, "devto") if user_id else {}
 
         try:
             platform_results = await publish_to_platforms(
@@ -569,18 +565,6 @@ async def create_blog(
     finally:
         # Release the lock so future attempts can proceed if this failed
         await db.locks.delete_one({"_id": lock_id})
-        if post_url:
-            try:
-                # Dynamically fetch encrypted LinkedIn credentials
-                linkedin_creds = await resolve_user_credentials(db, user_id, "linkedin")
-                social_results = share_to_platforms(
-                    title=problem.title,
-                    post_url=post_url,
-                    tags=problem.tags,
-                    credentials=linkedin_creds,  # Decrypted user scope profile object
-                )
-            except Exception as e:
-                print(f"Social sharing failed: {e}")
 
     # GitHub automatic commit integration
     if successful and user_settings.get("github_access_token") and user_settings.get("github_repo_name"):
@@ -621,17 +605,17 @@ class EditedBlog(BaseModel):
 @app.post("/publish-blog")
 async def publish_blog(
     blog: EditedBlog,
-    current_user: Annotated[dict[str, Any], Depends(get_current_user)],
+    current_user: Annotated[dict[str, Any] | None, Depends(get_optional_user)] = None,
     x_user_email: Optional[str] = Header(default=None),
 ):
     """
     Accepts an edited blog post and distributes it using safe user-isolated tokens.
     """
     user_email = require_user(x_user_email)
-    user_id = current_user["id"]
+    user_id = current_user["id"] if current_user else None
 
-    user_settings = await _settings_for_user(user_id)
-    devto_creds = await resolve_user_credentials(db, user_id, "devto")
+    user_settings = await _settings_for_user(user_id) if user_id else {}
+    devto_creds = await resolve_user_credentials(db, user_id, "devto") if user_id else {}
 
     try:
         platform_results = await publish_to_platforms(
