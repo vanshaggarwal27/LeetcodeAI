@@ -1,7 +1,8 @@
 # backend/tests/test_auth_settings.py
 
-import pytest
 import httpx
+import pytest
+
 import main
 
 pytestmark = pytest.mark.asyncio(loop_scope="package")
@@ -25,11 +26,11 @@ async def cleanup_database_before_test(app_module):
 
 
 class TestAuthSettingsRoutes:
-    
+
     async def test_register_login_and_update_integrations(self):
         """End-to-End verification of auth, session access, and system updates."""
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=main.app), base_url="http://test") as client:
-            
+
             # 1. Registration Test
             register_payload = {
                 "name": "Test User",
@@ -70,10 +71,10 @@ class TestAuthSettingsRoutes:
                 json=settings_payload,
                 headers={"Authorization": f"Bearer {token}"},
             )
-            
+
             assert settings_response.status_code == 200
             body = settings_response.json()
-            
+
             assert body["connected"]["devto"] is True
             assert body["connected"]["linkedin"] is True
             assert body["connected"]["whatsapp"] is True

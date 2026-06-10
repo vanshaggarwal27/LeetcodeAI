@@ -97,7 +97,7 @@ class DevToPublisher(BasePublisher):
         api_key = None
         if credentials:
             api_key = credentials.get("access_token") or credentials.get("devto_api_key")
-        
+
         if not api_key:
             api_key = os.getenv("DEVTO_API_KEY")
 

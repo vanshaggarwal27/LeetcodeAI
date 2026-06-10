@@ -1,9 +1,12 @@
 # backend/services/credential_service.py
 
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict
+
 from motor.motor_asyncio import AsyncIOMotorDatabase
+
 from utils.crypto import decrypt
+
 
 async def resolve_user_credentials(
     db: AsyncIOMotorDatabase,
@@ -38,5 +41,5 @@ async def resolve_user_credentials(
             "access_token": os.getenv("LINKEDIN_ACCESS_TOKEN"),
             "person_urn": os.getenv("LINKEDIN_PERSON_URN")
         }
-        
+
     return {}

@@ -1,8 +1,9 @@
 # backend/models/user.py
 
+from typing import Dict, Optional
+
 from pydantic import BaseModel, Field
-from typing import Optional, Dict
-from datetime import datetime
+
 
 class PlatformCredential(BaseModel):
     access_token: str

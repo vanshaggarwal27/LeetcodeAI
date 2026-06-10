@@ -106,7 +106,7 @@ class LinkedInSharer(BaseSocialSharer):
         tags: list[str],
         credentials: dict[str, Any] | None = None,
     ) -> SocialResult:
-        
+
         credentials = credentials or {}
         # Support both standard key shapes transparently
         access_token = credentials.get("access_token") or credentials.get("linkedin_access_token") or os.getenv("LINKEDIN_ACCESS_TOKEN")

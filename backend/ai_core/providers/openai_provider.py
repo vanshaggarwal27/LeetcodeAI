@@ -172,4 +172,3 @@ class OpenAIProvider(AIProvider):
                 raise HTTPException(status_code=502, detail=f"OpenAI service error: {str(e)}")
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Unexpected internal error: {str(e)}")
-            
