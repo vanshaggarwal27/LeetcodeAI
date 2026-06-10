@@ -197,7 +197,7 @@ class TestGenerateBlogRoute:
             "author": "testuser",
         }
         response = client.post("/generate-blog", json=payload, headers=TEST_HEADERS)
-        
+
         # Should return 503 Service Unavailable
         assert response.status_code == 503
 
