@@ -1,5 +1,5 @@
-const API_BASE_URL = "https://leetcodeai-backend.onrender.com";
-//const API_BASE_URL = "http://localhost:10000";
+//const API_BASE_URL = "https://leetcodeai-backend.onrender.com";
+const API_BASE_URL = "http://localhost:10000";
 
 //fixes timezone for IST and all non-UTC users
 function getLocalDateStr(date) {
@@ -46,16 +46,24 @@ async function fetchStatsFromBackend(email) {
     headers: { 'X-User-Email': email }
   });
   if (!res.ok) throw new Error('Bad response');
-  const { total_posts, platform_counts, week_activity, recent } = await res.json();
+  const { total_posts, platform_counts, week_activity, recent, current_streak } = await res.json();
 
   document.getElementById('totalPosts').textContent = total_posts;
   document.getElementById('thisWeek').textContent =
     Object.values(week_activity).reduce((a, b) => a + b, 0);
   document.getElementById('streakCount').textContent =
-    calculateStreakFromWeekMap(week_activity) + ' 🔥';
+    (current_streak !== undefined ? current_streak : calculateStreakFromWeekMap(week_activity)) + ' 🔥';
 
   renderWeekGridFromMap(week_activity);
-  renderPlatformBarsFromMap(platform_counts);
+
+  let countsMap = {};
+  if (Array.isArray(platform_counts)) {
+    platform_counts.forEach(item => countsMap[item.name] = item.value);
+  } else {
+    countsMap = platform_counts || {}; 
+  }
+  renderPlatformBarsFromMap(countsMap);
+  
   renderHistory(recent);
 }
 

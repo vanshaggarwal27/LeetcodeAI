@@ -33,6 +33,17 @@
                 document.querySelector('div[class*="question-content"]');
             const description = descriptionElement ? descriptionElement.innerText : "No description found.";
 
+            // Extract difficulty badge
+            const difficultyElement =
+                document.querySelector('.difficulty') ||
+                document.querySelector('.text-difficuly-easy') ||
+                document.querySelector('.text-difficuly-medium') ||
+                document.querySelector('.text-difficuly-hard');
+
+            const difficulty = difficultyElement
+                ? difficultyElement.innerText.trim()
+                : "Unknown Difficulty";
+
             let code = "";
             const viewLines = document.querySelector('.view-lines');
             if (viewLines) {
@@ -54,6 +65,13 @@
             const langElement = document.querySelector('[data-cy="lang-select"] button') ||
                 document.querySelector('.ant-select-selection-item');
             const language = langElement ? langElement.innerText.trim().toLowerCase() : "unknown";
+
+            // Extract topic tags (e.g. Array, Dynamic Programming, Hash Table)
+            const tagElements = document.querySelectorAll('a[href*="/tag/"]');
+            const topics = Array.from(tagElements)
+                .map(el => el.innerText.trim().toLowerCase())
+                .filter(Boolean)
+                .slice(0, 4); // Dev.to allows max 4 tags
 
             // Extract the user's LeetCode Username
             let author = "Anonymous LeetCoder";
@@ -79,7 +97,7 @@
             // Send to background script
             chrome.runtime.sendMessage({
                 type: 'GENERATE_BLOG',
-                payload: { title, description, code, author, client_time, custom_prompt, difficulty, language }
+                payload: { title, description, code, author, client_time, custom_prompt, difficulty, language, topics }
             });
 
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import StatsDashboard from "./StatsDashboard";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
@@ -8,6 +9,12 @@ const TOKEN_KEY = "leetlog_dashboard_token";
 const defaultSettings = {
   linkedin_access_token: "",
   linkedin_person_urn: "",
+  twitter_api_key: "",
+  twitter_api_secret: "",
+  twitter_access_token: "",
+  twitter_access_secret: "",
+  github_access_token: "",
+  github_repo_name: "",
   devto_api_key: "",
   whatsapp_number: "",
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata",
@@ -17,6 +24,7 @@ const defaultSettings = {
   gemini_api_key: "",
   openai_api_key: "",
   perplexity_api_key: "",
+  grok_api_key: "",
   publish_platforms: ["devto"]
 };
 
@@ -26,11 +34,18 @@ function normalizeSettings(settings) {
     ...settings,
     linkedin_access_token: settings?.linkedin_access_token || "",
     linkedin_person_urn: settings?.linkedin_person_urn || "",
+    twitter_api_key: settings?.twitter_api_key || "",
+    twitter_api_secret: settings?.twitter_api_secret || "",
+    twitter_access_token: settings?.twitter_access_token || "",
+    twitter_access_secret: settings?.twitter_access_secret || "",
+    github_access_token: settings?.github_access_token || "",
+    github_repo_name: settings?.github_repo_name || "",
     devto_api_key: settings?.devto_api_key || "",
     whatsapp_number: settings?.whatsapp_number || "",
     gemini_api_key: settings?.gemini_api_key || "",
     openai_api_key: settings?.openai_api_key || "",
     perplexity_api_key: settings?.perplexity_api_key || "",
+    grok_api_key: settings?.grok_api_key || "",
     publish_platforms: settings?.publish_platforms?.length ? settings.publish_platforms : ["devto"]
   };
 }
@@ -57,6 +72,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [settings, setSettings] = useState(defaultSettings);
   const [connected, setConnected] = useState({});
+  const [currentTab, setCurrentTab] = useState("settings");
   const [mode, setMode] = useState("login");
   const [authForm, setAuthForm] = useState({ name: "", email: "", password: "" });
   const [notice, setNotice] = useState("");
@@ -72,6 +88,8 @@ function App() {
       connected.ai_provider,
       connected.devto,
       connected.linkedin,
+      connected.twitter,
+      connected.github,
       connected.whatsapp
     ];
     return Math.round((checks.filter(Boolean).length / checks.length) * 100);
@@ -129,11 +147,18 @@ function App() {
         ...settings,
         linkedin_access_token: settings.linkedin_access_token || null,
         linkedin_person_urn: settings.linkedin_person_urn || null,
+        twitter_api_key: settings.twitter_api_key || null,
+        twitter_api_secret: settings.twitter_api_secret || null,
+        twitter_access_token: settings.twitter_access_token || null,
+        twitter_access_secret: settings.twitter_access_secret || null,
+        github_access_token: settings.github_access_token || null,
+        github_repo_name: settings.github_repo_name || null,
         devto_api_key: settings.devto_api_key || null,
         whatsapp_number: settings.whatsapp_number || null,
         gemini_api_key: settings.gemini_api_key || null,
         openai_api_key: settings.openai_api_key || null,
-        perplexity_api_key: settings.perplexity_api_key || null
+        perplexity_api_key: settings.perplexity_api_key || null,
+        grok_api_key: settings.grok_api_key || null
       };
       const data = await api(
         "/settings/integrations",
@@ -237,21 +262,24 @@ setAnalysisResult(data);
           </div>
         </div>
         <nav>
-          <a className="active" href="#settings">Settings</a>
-          <a href="#publishing">Publishing</a>
-          <a href="#reminders">Reminders</a>
+          <a className={currentTab === "settings" ? "active" : ""} onClick={() => setCurrentTab("settings")} href="#settings">Settings</a>
+          <a onClick={() => setCurrentTab("settings")} href="#publishing">Publishing</a>
+          <a onClick={() => setCurrentTab("settings")} href="#reminders">Reminders</a>
+          <a className={currentTab === "stats" ? "active" : ""} onClick={() => setCurrentTab("stats")} href="#stats">Stats</a>
         </nav>
         <button className="ghost" onClick={logout}>Log out</button>
       </aside>
 
       <section className="content">
-        <header className="topbar">
-          <div>
-            <p className="eyebrow">Workspace</p>
-            <h1>Settings and integrations</h1>
-          </div>
-          <div className="profile-pill">{user.name}</div>
-        </header>
+        {currentTab === "settings" && (
+          <>
+            <header className="topbar">
+              <div>
+                <p className="eyebrow">Workspace</p>
+                <h1>Settings and integrations</h1>
+              </div>
+              <div className="profile-pill">{user.name}</div>
+            </header>
 
         <section className="status-band">
           <div>
@@ -333,7 +361,7 @@ setAnalysisResult(data);
   </div>
 </section>
 
-        <form id="settings" onSubmit={saveSettings} className="settings-grid">
+            <form id="settings" onSubmit={saveSettings} className="settings-grid">
           <IntegrationCard title="AI Provider" connected={connected.ai_provider}>
             <label>
               Provider
@@ -341,6 +369,7 @@ setAnalysisResult(data);
                 <option value="gemini">Gemini</option>
                 <option value="openai">OpenAI</option>
                 <option value="perplexity">Perplexity</option>
+                <option value="grok">Grok</option>
               </select>
             </label>
             <label>
@@ -354,6 +383,10 @@ setAnalysisResult(data);
             <label>
               Perplexity API key
               <input type="password" value={settings.perplexity_api_key} onChange={(event) => setSettings({ ...settings, perplexity_api_key: event.target.value })} />
+            </label>
+            <label>
+              Grok API key
+              <input type="password" value={settings.grok_api_key} onChange={(event) => setSettings({ ...settings, grok_api_key: event.target.value })} />
             </label>
           </IntegrationCard>
 
@@ -393,6 +426,36 @@ setAnalysisResult(data);
             </label>
           </IntegrationCard>
 
+          <IntegrationCard title="Twitter / X" connected={connected.twitter}>
+            <label>
+              API key
+              <input type="password" value={settings.twitter_api_key} onChange={(event) => setSettings({ ...settings, twitter_api_key: event.target.value })} />
+            </label>
+            <label>
+              API secret
+              <input type="password" value={settings.twitter_api_secret} onChange={(event) => setSettings({ ...settings, twitter_api_secret: event.target.value })} />
+            </label>
+            <label>
+              Access token
+              <input type="password" value={settings.twitter_access_token} onChange={(event) => setSettings({ ...settings, twitter_access_token: event.target.value })} />
+            </label>
+            <label>
+              Access token secret
+              <input type="password" value={settings.twitter_access_secret} onChange={(event) => setSettings({ ...settings, twitter_access_secret: event.target.value })} />
+            </label>
+          </IntegrationCard>
+
+          <IntegrationCard title="GitHub Auto-Publisher" connected={connected.github}>
+            <label>
+              Personal Access Token
+              <input type="password" value={settings.github_access_token} onChange={(event) => setSettings({ ...settings, github_access_token: event.target.value })} />
+            </label>
+            <label>
+              Repository Name
+              <input value={settings.github_repo_name} onChange={(event) => setSettings({ ...settings, github_repo_name: event.target.value })} placeholder="username/leetcode-solutions" />
+            </label>
+          </IntegrationCard>
+
           <IntegrationCard title="WhatsApp Reminder" connected={connected.whatsapp}>
             <label className="toggle-row">
               <input type="checkbox" checked={settings.is_whatsapp_enabled} onChange={(event) => setSettings({ ...settings, is_whatsapp_enabled: event.target.checked })} />
@@ -418,6 +481,9 @@ setAnalysisResult(data);
             <button className="primary" disabled={isBusy}>{isBusy ? "Saving..." : "Save settings"}</button>
           </div>
         </form>
+          </>
+        )}
+        {currentTab === "stats" && <StatsDashboard token={token} api={api} />}
       </section>
     </main>
   );

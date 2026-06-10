@@ -4,6 +4,7 @@ import os
 from .providers.gemini_provider import GeminiProvider
 from .providers.openai_provider import OpenAIProvider
 from .providers.perplexity_provider import PerplexityProvider
+from .providers.grok_provider import GrokProvider
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +16,7 @@ class ProviderManager:
             "gemini": GeminiProvider,
             "openai": OpenAIProvider,
             "perplexity": PerplexityProvider,
+            "grok": GrokProvider,
         }
 
     def get_provider_order(self, selected_provider: str | None = None) -> list[str]:
@@ -31,6 +33,7 @@ class ProviderManager:
             "gemini",
             "openai",
             "perplexity",
+            "grok",
         ]
 
         provider_order = [
@@ -51,6 +54,7 @@ class ProviderManager:
             "gemini": "gemini_api_key",
             "openai": "openai_api_key",
             "perplexity": "perplexity_api_key",
+            "grok": "grok_api_key",
         }
         api_key = (credentials or {}).get(credential_names.get(provider_name, ""))
         return provider_class(api_key=api_key)
