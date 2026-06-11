@@ -114,6 +114,7 @@ class Problem(BaseModel):
     language: str | None = None
     client_time: str | None = None
     custom_prompt: str | None = None
+    tone: str | None = None
     platforms: list[str] | None = None
     publish_as_draft: bool = False
     share_to_social: bool = True
@@ -452,6 +453,19 @@ async def create_blog(
             status_code=400,
             detail="Custom prompt exceeds maximum length of 1000 characters.",
         )
+    allowed_tones = [
+        "beginner",
+        "professional",
+        "academic",
+        "humorous",
+        "concise"
+    ]
+
+    if problem.tone and problem.tone.lower() not in allowed_tones:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid tone selected."
+        )    
 
     if not problem.code or problem.code.strip() == "":
         return {"status": "error", "message": "Code is empty, cannot generate blog."}

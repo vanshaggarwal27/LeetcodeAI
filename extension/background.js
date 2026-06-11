@@ -13,7 +13,7 @@ function getUserEmail() {
 }
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'GENERATE_BLOG') {
-        const { title, description, code, author, client_time, custom_prompt, difficulty } = request.payload;
+        const { title, description, code, author, client_time, custom_prompt,tone, difficulty } = request.payload;
         chrome.storage.local.get({
             publishingPlatforms: ['devto'],
             publishAsDraft: false,
@@ -27,7 +27,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "X-User-Email": userEmail },
                 body: JSON.stringify({
-                    title, description, code, author, client_time, custom_prompt, difficulty,
+                    title, description, code, author, client_time, custom_prompt, tone, difficulty,
                     platforms: publishingPlatforms,
                     publish_as_draft: publishAsDraft
                 })

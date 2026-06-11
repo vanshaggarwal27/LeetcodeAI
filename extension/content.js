@@ -14,7 +14,10 @@
     const AUTO_TRIGGER_MIN_INTERVAL_MS = 60 * 1000; // 1 minute between auto-triggers for same submission
 
     // Function to handle data extraction and blog generation
-    const triggerBlogGeneration = async (custom_prompt = "") => {
+    const triggerBlogGeneration = async (
+        custom_prompt = "",
+        tone = "beginner"
+    ) => {
         if (isProcessing) return;
         isProcessing = true;
 
@@ -79,7 +82,7 @@
             // Send to background script
             chrome.runtime.sendMessage({
                 type: 'GENERATE_BLOG',
-                payload: { title, description, code, author, client_time, custom_prompt, difficulty, language }
+                payload: { title, description, code, author, client_time, custom_prompt, tone, difficulty, language }
             });
 
 
@@ -129,7 +132,10 @@
     // Start of Listener for manual triggers from popup and status updates
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (request.type === 'MANUAL_TRIGGER') {
-            triggerBlogGeneration(request.custom_prompt || ""); //usage of custom prompt
+            triggerBlogGeneration(
+                request.custom_prompt || "",
+                request.tone || "beginner"
+            ); //usage of custom prompt
         } else if (request.type === 'STATUS_UPDATE') {
             if (request.status === 'success' || request.status === 'error') {
                 isProcessing = false;

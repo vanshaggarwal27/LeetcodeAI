@@ -113,6 +113,29 @@
             box-shadow: 0 0 0 3px rgba(247, 160, 26, 0.15);
             background: rgba(0, 0, 0, 0.4);
         }
+        select {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(247, 160, 26, 0.15);
+        }
+
+        select option {
+            background: #1a1d29;
+            color: white;
+        }
 
         textarea::placeholder {
             color: #606575;
@@ -510,6 +533,16 @@
     
     <div class="input-group">
         <label for="customPrompt">Custom Prompt (Optional)</label>
+        <div class="input-group">
+            <label for="toneSelect">Writing Tone</label>
+            <select id="toneSelect">
+                <option value="beginner">Beginner Friendly</option>
+                <option value="professional">Professional</option>
+                <option value="academic">Academic</option>
+                <option value="humorous">Humorous</option>
+                <option value="concise">Concise</option>
+            </select>
+        </div>
         <textarea id="customPrompt" placeholder="e.g. Make it more humorous, explain time complexity in detail..."></textarea>
     </div>
 
@@ -552,7 +585,7 @@
         <span id="btn-text">Generate Blog</span>
         <span id="btn-spinner" class="spinner" style="display: none; margin-left: 4px;">⏳</span>
     </button>
-    <button id="copyBtn">
+    <button id="copyBtn"><label for="customPrompt">Custom Prompt (Optional)</label>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; margin-right: 4px;">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
