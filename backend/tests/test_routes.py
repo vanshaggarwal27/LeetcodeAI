@@ -6,7 +6,9 @@ because all routes return HTTP 200 even on failure.
 """
 
 import os
+
 import pytest
+
 os.environ["APP_SECRET_KEY"] = "test-app-secret-key-1234567890"
 
 from main import _sign_token

@@ -1,8 +1,6 @@
 from datetime import datetime, timezone
 
 import pytest
-import pytest
-from datetime import datetime, timezone
 
 
 @pytest.mark.parametrize(
@@ -22,7 +20,7 @@ def test_due_timezones_multiple_regions(utc_time, expected_timezone):
 
 
 def test_due_timezones_includes_local_11pm_zone():
-    
+
     from alerts.progress_checker import due_timezones
 
     zones = due_timezones(datetime(2026, 1, 1, 17, 30, tzinfo=timezone.utc))
