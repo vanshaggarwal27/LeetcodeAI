@@ -34,6 +34,7 @@ from ai import rate_code_efficiency
 from ai_core.blog_generator import generate_blog, generate_tags
 from devto import publish_to_platforms
 from models.reminder import PublishRecord
+from services.credential_service import resolve_user_credentials
 from services.reminder_scheduler import start_scheduler
 from services.complexity_analyzer import analyze_code
 from social import share_to_platforms
@@ -130,13 +131,6 @@ class ReminderPreference(BaseModel):
     is_opted_in: bool = True
 
 
-def require_user(x_user_email: Optional[str]) -> str:
-    """Extract and validate user email from header."""
-    if not x_user_email or "@" not in x_user_email:
-        raise HTTPException(
-            status_code=401, detail="Missing or invalid X-User-Email header."
-        )
-    return x_user_email.lower().strip()
 
 
 class AuthCredentials(BaseModel):
@@ -447,13 +441,12 @@ async def create_blog(
     request: Request,
     problem: Problem,
     current_user: Annotated[dict[str, Any], Depends(get_current_user)],
-    x_user_email: Optional[str] = Header(default=None),
 ):
     """
     Accepts a LeetCode problem, pulls user-specific database integration credentials,
     generates a blog post using AI, and publishes it dynamically.
     """
-    user_email = require_user(x_user_email)
+    user_email = current_user["email"]
     user_id = current_user["id"]
 
     existing_record = await db.problem_info.find_one(
@@ -594,12 +587,11 @@ class EditedBlog(BaseModel):
 async def publish_blog(
     blog: EditedBlog,
     current_user: Annotated[dict[str, Any], Depends(get_current_user)],
-    x_user_email: Optional[str] = Header(default=None),
 ):
     """
     Accepts an edited blog post and distributes it using safe user-isolated tokens.
     """
-    user_email = require_user(x_user_email)
+    user_email = current_user["email"]
     user_id = current_user["id"]
 
     user_settings = await _settings_for_user(user_id)
@@ -672,13 +664,9 @@ async def publish_blog(
 # -----------------------------
 @app.get("/dashboard/stats")
 async def get_dashboard_stats(
-    x_user_email: Optional[str] = Header(default=None),
-    current_user: Annotated[dict[str, Any] | None, Depends(get_optional_user)] = None,
+    current_user: Annotated[dict[str, Any], Depends(get_current_user)],
 ):
-    if current_user:
-        user_email = current_user["email"]
-    else:
-        user_email = require_user(x_user_email)
+    user_email = current_user["email"]
         
     user_filter = {"user_email": user_email}
 
@@ -768,11 +756,11 @@ async def get_dashboard_stats(
 
 @app.get("/dashboard/history")
 async def get_dashboard_history(
+    current_user: Annotated[dict[str, Any], Depends(get_current_user)],
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    x_user_email: Optional[str] = Header(default=None),
 ):
-    user_email = require_user(x_user_email)
+    user_email = current_user["email"]
     user_filter = {"user_email": user_email}
     skip = (page - 1) * page_size
     cursor = (
@@ -788,9 +776,9 @@ async def get_dashboard_history(
 
 @app.post("/dashboard/record")
 async def record_publish(
-    record: PublishRecord, x_user_email: Optional[str] = Header(default=None)
+    record: PublishRecord, current_user: Annotated[dict[str, Any], Depends(get_current_user)]
 ):
-    user_email = require_user(x_user_email)
+    user_email = current_user["email"]
     data = record.model_dump()
     data["user_email"] = user_email
     await db.problem_info.update_one(

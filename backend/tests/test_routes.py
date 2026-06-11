@@ -5,9 +5,14 @@ Tests check response body, not status code, for error cases
 because all routes return HTTP 200 even on failure.
 """
 
+import os
 import pytest
+os.environ["APP_SECRET_KEY"] = "test-app-secret-key-1234567890"
 
-TEST_HEADERS = {"x-user-email": "test@example.com"}
+from main import _sign_token
+
+TEST_TOKEN = _sign_token({"sub": "test-user-id", "email": "test@example.com", "exp": 9999999999})
+TEST_HEADERS = {"Authorization": f"Bearer {TEST_TOKEN}"}
 
 
 class TestHealthRoutes:
@@ -196,7 +201,7 @@ class TestGenerateBlogRoute:
             "code": "def twoSum(): pass",
             "author": "testuser",
         }
-        response = client.post("/generate-blog", json=payload)
+        response = client.post("/generate-blog", json=payload, headers=TEST_HEADERS)
 
         # Should return 503 Service Unavailable
         assert response.status_code == 503

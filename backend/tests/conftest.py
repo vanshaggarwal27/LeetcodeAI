@@ -151,6 +151,7 @@ class FakeDatabase:
         self.preferences = FakeCollection()
         self.problem_info = FakeCollection()  # Upgraded to normal collection interface to track test states
         self.users = FakeCollection()
+        self.users.records.append({"id": "test-user-id", "email": "test@example.com", "name": "Test User"})
         self.integration_settings = FakeCollection()
         self.reminder_jobs = FakeCollection()
         self.reminder_alerts = FakeCollection()
