@@ -1,31 +1,28 @@
 import base64
-from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, timezone
 import hashlib
 import hmac
 import json
 import logging
 import os
 import secrets
+from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any, Optional
 
+import httpx
 import motor.motor_asyncio
 import uvicorn
-import httpx
-
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, status
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
-from dotenv import load_dotenv
 from pydantic import BaseModel
+from pymongo.errors import PyMongoError
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
-from pymongo.errors import PyMongoError
 from twilio.rest import Client
 
 from ai import rate_code_efficiency
@@ -33,11 +30,14 @@ from ai import rate_code_efficiency
 # --- UPDATED AI PATH ---
 from ai_core.blog_generator import generate_blog, generate_tags
 from devto import publish_to_platforms
-from models.reminder import PublishRecord
-from services.reminder_scheduler import start_scheduler
-from services.complexity_analyzer import analyze_code
-from social import share_to_platforms
 from github_integration import push_solution_to_github
+from models.reminder import PublishRecord
+from models.user import PlatformCredential
+from services.complexity_analyzer import analyze_code
+from services.credential_service import resolve_user_credentials
+from services.reminder_scheduler import start_scheduler
+from social import share_to_platforms
+from utils.crypto import encrypt
 
 load_dotenv()
 
@@ -484,7 +484,7 @@ async def create_blog(
         raise HTTPException(
             status_code=400,
             detail="Invalid tone selected."
-        )    
+            )
 
     if not problem.code or problem.code.strip() == "":
         return {"status": "error", "message": "Code is empty, cannot generate blog."}
@@ -505,14 +505,14 @@ async def create_blog(
     devto_creds = await resolve_user_credentials(db, user_id, "devto")
 
     try:
-        suggested_tags = await run_in_threadpool(
+        await run_in_threadpool(
             generate_tags,
             problem,
             blog_content,
             credentials=user_settings,
         )
     except Exception:
-        suggested_tags = ""
+        pass
 
     try:
         platform_results = await publish_to_platforms(
@@ -693,8 +693,7 @@ async def get_dashboard_stats(
         user_email = current_user["email"]
     else:
         user_email = require_user(x_user_email)
-        
-    user_filter = {"user_email": user_email}
+        user_filter = {"user_email": user_email}
 
     try:
         total = await db.problem_info.count_documents(user_filter)
@@ -740,14 +739,12 @@ async def get_dashboard_stats(
         if daily_activity:
             dates_set = {doc["date"] for doc in daily_activity}
             today = datetime.now(timezone.utc).date()
-            
             current_date = today
             if current_date.isoformat() not in dates_set:
                 current_date = today - timedelta(days=1)
-                
-            while current_date.isoformat() in dates_set:
-                current_streak += 1
-                current_date -= timedelta(days=1)
+                while current_date.isoformat() in dates_set:
+                    current_streak += 1
+                    current_date -= timedelta(days=1)
 
         recent_cursor = (
             db.problem_info.find(
