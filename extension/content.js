@@ -100,11 +100,18 @@
             // Send to background script
             chrome.runtime.sendMessage({
                 type: 'GENERATE_BLOG',
-
-                payload: { title, description, code, author, client_time, custom_prompt, tone, difficulty, language }
-
-                payload: { title, description, code, author, client_time, custom_prompt, difficulty, language, topics }
-
+                payload: {
+                    title,
+                    description,
+                    code,
+                    author,
+                    client_time,
+                    custom_prompt,
+                    tone,
+                    difficulty,
+                    language,
+                    topics
+                }
             });
 
 
