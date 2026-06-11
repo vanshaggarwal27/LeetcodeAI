@@ -6,11 +6,7 @@ function getUserEmail() {
     });
 }
 
-function getUserEmail() {
-    return new Promise(resolve => {
-        chrome.storage.local.get({ userEmail: null }, ({ userEmail }) => resolve(userEmail));
-    });
-}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'GENERATE_BLOG') {
         const {
