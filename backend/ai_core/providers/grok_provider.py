@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 class GrokProvider(AIProvider):
-    def __init__(self):
-        self.api_key = os.getenv("XAI_API_KEY")
+    def __init__(self, api_key: str | None = None):
+        self.api_key = api_key or os.getenv("XAI_API_KEY")
 
         if not self.api_key:
             raise Exception("XAI_API_KEY is missing")
