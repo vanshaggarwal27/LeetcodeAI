@@ -80,7 +80,7 @@ def _build_prompt(problem, current_time: str) -> str:
         - CELL CONTENT: If a cell contains a bitwise OR operator `|` or any pipe character, you MUST escape it as `\\|` (e.g., `(a \\| b)`). Failing to escape pipes inside cells will break the table structure.
         - Ensure the separator line is continuous (no line breaks) and uses at least 3 dashes per column.
         - Always provide an EMPTY LINE before and after the table to ensure correct rendering.
-    """   
+    """
     if hasattr(problem, "custom_prompt") and problem.custom_prompt:
         cleaned = problem.custom_prompt.strip()
         if cleaned:

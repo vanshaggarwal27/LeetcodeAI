@@ -3,7 +3,6 @@ import logging
 from fastapi import HTTPException
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from .prompts import build_prompt, get_current_time
 from .prompts import build_prompt, build_tag_prompt, get_current_time
 from .provider_manager import ProviderManager
 
