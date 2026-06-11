@@ -220,7 +220,7 @@ def client(app_module):
         yield test_client
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def mock_generate_blog(app_module, mocker):
     return mocker.patch(
         "main.generate_blog",
@@ -228,7 +228,15 @@ def mock_generate_blog(app_module, mocker):
         return_value="# Mock blog content",
     )
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
+def mock_generate_tags(app_module, mocker):
+    return mocker.patch(
+        "main.generate_tags",
+        autospec=True,
+        return_value=["mock", "tags"],
+    )
+
+@pytest.fixture(autouse=True)
 def mock_rate_code_efficiency(app_module, mocker):
     return mocker.patch(
         "main.rate_code_efficiency",
@@ -241,7 +249,7 @@ def mock_rate_code_efficiency(app_module, mocker):
         },
     )
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def mock_post_to_platform(app_module, mocker):
     return mocker.patch(
         "main.publish_to_platforms",
