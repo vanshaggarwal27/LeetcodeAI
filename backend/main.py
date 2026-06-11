@@ -1,31 +1,28 @@
 import base64
-from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, timezone
 import hashlib
 import hmac
 import json
 import logging
 import os
 import secrets
+from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any, Optional
 
+import httpx
 import motor.motor_asyncio
 import uvicorn
-import httpx
-
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, status
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
-from dotenv import load_dotenv
 from pydantic import BaseModel
+from pymongo.errors import PyMongoError
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
-from pymongo.errors import PyMongoError
 from twilio.rest import Client
 
 from ai import rate_code_efficiency
@@ -33,12 +30,14 @@ from ai import rate_code_efficiency
 # --- UPDATED AI PATH ---
 from ai_core.blog_generator import generate_blog, generate_tags
 from devto import publish_to_platforms
+from github_integration import push_solution_to_github
 from models.reminder import PublishRecord
+from models.user import PlatformCredential
+from services.complexity_analyzer import analyze_code
 from services.credential_service import resolve_user_credentials
 from services.reminder_scheduler import start_scheduler
-from services.complexity_analyzer import analyze_code
 from social import share_to_platforms
-from github_integration import push_solution_to_github
+from utils.crypto import encrypt
 
 load_dotenv()
 
@@ -499,7 +498,7 @@ async def create_blog(
             blog_content,
             platforms=problem.platforms or user_settings.get("publish_platforms"),
             published=not problem.publish_as_draft,
-            tags=problem.tags,
+            tags=problem.tags or suggested_tags,
             credentials=devto_creds,  # Using user specific keys
         )
         successful = [r for r in platform_results if r.get("status") == "success"]
@@ -667,7 +666,7 @@ async def get_dashboard_stats(
     current_user: Annotated[dict[str, Any], Depends(get_current_user)],
 ):
     user_email = current_user["email"]
-        
+
     user_filter = {"user_email": user_email}
 
     try:
@@ -714,11 +713,11 @@ async def get_dashboard_stats(
         if daily_activity:
             dates_set = {doc["date"] for doc in daily_activity}
             today = datetime.now(timezone.utc).date()
-            
+
             current_date = today
             if current_date.isoformat() not in dates_set:
                 current_date = today - timedelta(days=1)
-                
+
             while current_date.isoformat() in dates_set:
                 current_streak += 1
                 current_date -= timedelta(days=1)
