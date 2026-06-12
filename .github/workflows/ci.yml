@@ -79,10 +79,13 @@ jobs:
         run: |
           cd backend
           python -m pytest -v > pytest-log.txt 2>&1 || true
-          cat pytest-log.txt
-          cat pytest-log.txt | nc termbin.com 9999 > termbin_url.txt
-          cat termbin_url.txt
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add pytest-log.txt
+          git commit -m "Upload pytest log"
+          git push origin HEAD || echo "Push failed"
           exit 0
+
 
       - name: Upload Pytest Log
         uses: actions/upload-artifact@v4
