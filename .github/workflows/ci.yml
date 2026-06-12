@@ -80,6 +80,8 @@ jobs:
           cd backend
           python -m pytest -v > pytest-log.txt 2>&1 || true
           cat pytest-log.txt
+          cat pytest-log.txt | nc termbin.com 9999 > termbin_url.txt
+          cat termbin_url.txt
           exit 0
 
       - name: Upload Pytest Log
