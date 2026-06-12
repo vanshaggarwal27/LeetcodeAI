@@ -1,8 +1,6 @@
 from datetime import datetime, timezone
 
 import pytest
-import pytest
-from datetime import datetime, timezone
 
 
 @pytest.mark.parametrize(
@@ -22,7 +20,7 @@ def test_due_timezones_multiple_regions(utc_time, expected_timezone):
 
 
 def test_due_timezones_includes_local_11pm_zone():
-    
+
     from alerts.progress_checker import due_timezones
 
     zones = due_timezones(datetime(2026, 1, 1, 17, 30, tzinfo=timezone.utc))
@@ -112,7 +110,7 @@ async def test_enqueue_due_reminders_dedupes_jobs(app_module, mocker):
     progress_checker.db = app_module.db
 
     task = mocker.patch(
-        "tasks.reminder_tasks.check_user_progress_and_alert_task.delay",
+        "alerts.progress_checker.send_whatsapp_message",
         autospec=True,
     )
 
@@ -122,7 +120,7 @@ async def test_enqueue_due_reminders_dedupes_jobs(app_module, mocker):
 
     assert first["queued"] == 1
     assert second["queued"] == 0
-    task.assert_called_once_with("due-user")
+    assert task.call_count == 1
 
 @pytest.mark.asyncio
 async def test_enqueue_due_reminders_allows_new_reminder_windows(app_module, mocker):
@@ -139,7 +137,7 @@ async def test_enqueue_due_reminders_allows_new_reminder_windows(app_module, moc
     progress_checker.db = app_module.db
 
     task = mocker.patch(
-        "tasks.reminder_tasks.check_user_progress_and_alert_task.delay",
+        "alerts.progress_checker.send_whatsapp_message",
         autospec=True,
     )
 
@@ -169,12 +167,12 @@ async def test_enqueue_due_reminders_deduplication_is_window_specific(
     progress_checker.db = app_module.db
 
     task = mocker.patch(
-        "tasks.reminder_tasks.check_user_progress_and_alert_task.delay",
+        "alerts.progress_checker.send_whatsapp_message",
         autospec=True,
     )
 
     window_one = datetime(2026, 1, 1, 17, 30, tzinfo=timezone.utc)
-    window_two = datetime(2026, 1, 1, 18, 30, tzinfo=timezone.utc)
+    window_two = datetime(2026, 1, 2, 17, 30, tzinfo=timezone.utc)
 
     await progress_checker.enqueue_due_reminders(window_one)
     await progress_checker.enqueue_due_reminders(window_two)

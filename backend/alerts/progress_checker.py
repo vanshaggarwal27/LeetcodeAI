@@ -211,10 +211,10 @@ async def enqueue_due_reminders(now_utc: datetime | None = None) -> dict:
     now_utc = now_utc or datetime.now(timezone.utc)
     due_users = await find_due_reminder_users(now_utc)
 
-    queued = 0
     skipped = 0
 
-    from tasks.reminder_tasks import check_user_progress_and_alert_task
+
+    queued = 0
 
     for user in due_users:
         user_id = user.get("user_id")
@@ -229,7 +229,11 @@ async def enqueue_due_reminders(now_utc: datetime | None = None) -> dict:
         # Check if there is a blog post created today
         # Date is stored as ISO format string, we can do a regex or range query
         # Since it's stored as '2026-05-23T...', we can do a prefix match
-        today_str = today.isoformat()
+        today_str = now_utc.date().isoformat()
+        phone = user.get("whatsapp_number")
+        if not phone:
+            skipped += 1
+            continue
 
         solved_today_count = await db.problem_info.count_documents({
             "date": {"$regex": f"^{today_str}"}
@@ -275,6 +279,8 @@ async def enqueue_due_reminders(now_utc: datetime | None = None) -> dict:
 
         if not has_solved:
             # Not solved today, send reminder!
+            queued += 1
+            await db.reminder_jobs.insert_one({"key": queue_key, "status": "queued"})
             name = "Vansh" # Fallback or could add name to DB
             message = generate_message(name)
 
@@ -317,6 +323,8 @@ async def enqueue_due_reminders(now_utc: datetime | None = None) -> dict:
 
         else:
             print(f"User {phone} has already solved {solved_today_count} problems today!")
+
+    return {"queued": queued, "skipped": skipped}
 
 def check_unsolved_users() -> dict:
     return asyncio.run(enqueue_due_reminders())

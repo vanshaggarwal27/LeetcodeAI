@@ -1,5 +1,7 @@
 import base64
+
 import requests
+
 
 def push_solution_to_github(title: str, code: str, access_token: str, repo_name: str) -> dict:
     """
@@ -13,7 +15,7 @@ def push_solution_to_github(title: str, code: str, access_token: str, repo_name:
     file_path = f"solutions/{filename}.py"
 
     url = f"https://api.github.com/repos/{repo_name}/contents/{file_path}"
-    
+
     headers = {
         "Authorization": f"token {access_token}",
         "Accept": "application/vnd.github.v3+json"

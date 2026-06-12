@@ -1,31 +1,28 @@
 import base64
-from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, timezone
 import hashlib
 import hmac
 import json
 import logging
 import os
 import secrets
+from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any, Optional
 
+import httpx
 import motor.motor_asyncio
 import uvicorn
-import httpx
-
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, status
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
-from dotenv import load_dotenv
 from pydantic import BaseModel
+from pymongo.errors import PyMongoError
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
-from pymongo.errors import PyMongoError
 from twilio.rest import Client
 
 from ai import rate_code_efficiency
@@ -33,11 +30,14 @@ from ai import rate_code_efficiency
 # --- UPDATED AI PATH ---
 from ai_core.blog_generator import generate_blog, generate_tags
 from devto import publish_to_platforms
-from models.reminder import PublishRecord
-from services.reminder_scheduler import start_scheduler
-from services.complexity_analyzer import analyze_code
-from social import share_to_platforms
 from github_integration import push_solution_to_github
+from models.reminder import PublishRecord
+from models.user import PlatformCredential
+from services.complexity_analyzer import analyze_code
+from services.credential_service import resolve_user_credentials
+from services.reminder_scheduler import start_scheduler
+from social import share_to_platforms
+from utils.crypto import encrypt
 
 load_dotenv()
 
@@ -130,13 +130,6 @@ class ReminderPreference(BaseModel):
     is_opted_in: bool = True
 
 
-def require_user(x_user_email: Optional[str]) -> str:
-    """Extract and validate user email from header."""
-    if not x_user_email or "@" not in x_user_email:
-        raise HTTPException(
-            status_code=401, detail="Missing or invalid X-User-Email header."
-        )
-    return x_user_email.lower().strip()
 
 
 class AuthCredentials(BaseModel):
@@ -447,13 +440,12 @@ async def create_blog(
     request: Request,
     problem: Problem,
     current_user: Annotated[dict[str, Any], Depends(get_current_user)],
-    x_user_email: Optional[str] = Header(default=None),
 ):
     """
     Accepts a LeetCode problem, pulls user-specific database integration credentials,
     generates a blog post using AI, and publishes it dynamically.
     """
-    user_email = require_user(x_user_email)
+    user_email = current_user["email"]
     user_id = current_user["id"]
 
     existing_record = await db.problem_info.find_one(
@@ -506,7 +498,7 @@ async def create_blog(
             blog_content,
             platforms=problem.platforms or user_settings.get("publish_platforms"),
             published=not problem.publish_as_draft,
-            tags=problem.tags,
+            tags=problem.tags or suggested_tags,
             credentials=devto_creds,  # Using user specific keys
         )
         successful = [r for r in platform_results if r.get("status") == "success"]
@@ -594,12 +586,11 @@ class EditedBlog(BaseModel):
 async def publish_blog(
     blog: EditedBlog,
     current_user: Annotated[dict[str, Any], Depends(get_current_user)],
-    x_user_email: Optional[str] = Header(default=None),
 ):
     """
     Accepts an edited blog post and distributes it using safe user-isolated tokens.
     """
-    user_email = require_user(x_user_email)
+    user_email = current_user["email"]
     user_id = current_user["id"]
 
     user_settings = await _settings_for_user(user_id)
@@ -672,14 +663,10 @@ async def publish_blog(
 # -----------------------------
 @app.get("/dashboard/stats")
 async def get_dashboard_stats(
-    x_user_email: Optional[str] = Header(default=None),
-    current_user: Annotated[dict[str, Any] | None, Depends(get_optional_user)] = None,
+    current_user: Annotated[dict[str, Any], Depends(get_current_user)],
 ):
-    if current_user:
-        user_email = current_user["email"]
-    else:
-        user_email = require_user(x_user_email)
-        
+    user_email = current_user["email"]
+
     user_filter = {"user_email": user_email}
 
     try:
@@ -726,11 +713,11 @@ async def get_dashboard_stats(
         if daily_activity:
             dates_set = {doc["date"] for doc in daily_activity}
             today = datetime.now(timezone.utc).date()
-            
+
             current_date = today
             if current_date.isoformat() not in dates_set:
                 current_date = today - timedelta(days=1)
-                
+
             while current_date.isoformat() in dates_set:
                 current_streak += 1
                 current_date -= timedelta(days=1)
@@ -768,11 +755,11 @@ async def get_dashboard_stats(
 
 @app.get("/dashboard/history")
 async def get_dashboard_history(
+    current_user: Annotated[dict[str, Any], Depends(get_current_user)],
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    x_user_email: Optional[str] = Header(default=None),
 ):
-    user_email = require_user(x_user_email)
+    user_email = current_user["email"]
     user_filter = {"user_email": user_email}
     skip = (page - 1) * page_size
     cursor = (
@@ -788,9 +775,9 @@ async def get_dashboard_history(
 
 @app.post("/dashboard/record")
 async def record_publish(
-    record: PublishRecord, x_user_email: Optional[str] = Header(default=None)
+    record: PublishRecord, current_user: Annotated[dict[str, Any], Depends(get_current_user)]
 ):
-    user_email = require_user(x_user_email)
+    user_email = current_user["email"]
     data = record.model_dump()
     data["user_email"] = user_email
     await db.problem_info.update_one(

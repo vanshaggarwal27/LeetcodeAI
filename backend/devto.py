@@ -97,7 +97,7 @@ class DevToPublisher(BasePublisher):
         api_key = None
         if credentials:
             api_key = credentials.get("access_token") or credentials.get("devto_api_key")
-        
+
         if not api_key:
             api_key = os.getenv("DEVTO_API_KEY")
 
@@ -163,7 +163,7 @@ class HashnodePublisher(BasePublisher):
           }
         }
         """
-        response = self._post_with_retries(
+        response = await self._post_with_retries(
             "https://gql.hashnode.com/",
             headers={
                 "Authorization": token,
@@ -352,7 +352,7 @@ async def publish_to_platforms(
 
 async def post_to_platform(title: str, content: str) -> dict[str, Any]:
     """Backward-compatible Dev.to-only wrapper used by older integrations."""
-    results = publish_to_platforms(title, content, platforms=["devto"])
+    results = await publish_to_platforms(title, content, platforms=["devto"])
     first = results[0]
     if first["status"] != "success":
         raise Exception(first.get("message", "Dev.to publishing failed."))

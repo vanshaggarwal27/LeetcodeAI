@@ -2,9 +2,9 @@ import logging
 import os
 
 from .providers.gemini_provider import GeminiProvider
+from .providers.grok_provider import GrokProvider
 from .providers.openai_provider import OpenAIProvider
 from .providers.perplexity_provider import PerplexityProvider
-from .providers.grok_provider import GrokProvider
 
 logger = logging.getLogger(__name__)
 
