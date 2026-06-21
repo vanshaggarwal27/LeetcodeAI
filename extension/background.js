@@ -1,45 +1,39 @@
 const API_BASE_URL = "https://leetcodeai-backend.onrender.com";
-
-async function parseApiResponse(response) {
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-        throw new Error(data.detail || data.message || `Request failed with status ${response.status}`);
-    }
-    return data;
+//const API_BASE_URL = "http://localhost:10000";
+function getUserEmail() {
+    return new Promise(resolve => {
+        chrome.storage.local.get({ userEmail: null }, ({ userEmail }) => resolve(userEmail));
+    });
 }
 
-function authHeaders(userEmail, sessionToken) {
-    return {
-        "Content-Type": "application/json",
-        "X-User-Email": userEmail,
-        "Authorization": `Bearer ${sessionToken}`
-    };
+function getUserEmail() {
+    return new Promise(resolve => {
+        chrome.storage.local.get({ userEmail: null }, ({ userEmail }) => resolve(userEmail));
+    });
 }
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'GENERATE_BLOG') {
-        const { title, description, code, author, client_time, custom_prompt, difficulty, language, topics } = request.payload;
+        const { title, description, code, author, client_time, custom_prompt, difficulty, topics } = request.payload;
         chrome.storage.local.get({
             publishingPlatforms: ['devto'],
             publishAsDraft: false,
             userEmail: null,
-            sessionToken: null,
-        }, async ({ publishingPlatforms, publishAsDraft, userEmail, sessionToken }) => {
-            if (!userEmail || !sessionToken) {
-                chrome.runtime.sendMessage({ type: 'STATUS_UPDATE', message: 'Please log in before publishing.', status: 'error' });
+        }, async ({ publishingPlatforms, publishAsDraft, userEmail }) => {
+            if (!userEmail) {
+                chrome.runtime.sendMessage({ type: 'STATUS_UPDATE', message: 'Please set your email in the extension settings before publishing.', status: 'error' });
                 return;
             }
             fetch(`${API_BASE_URL}/generate-blog`, {
                 method: "POST",
-                headers: authHeaders(userEmail, sessionToken),
+                headers: { "Content-Type": "application/json", "X-User-Email": userEmail },
                 body: JSON.stringify({
-                    title, description, code, author, client_time, custom_prompt, difficulty, language,
+                    title, description, code, author, client_time, custom_prompt, difficulty,
                     tags: (topics && topics.length > 0) ? topics : null,
                     platforms: publishingPlatforms,
                     publish_as_draft: publishAsDraft
                 })
             })
-                .then(parseApiResponse)
+                .then(r => r.json())
                 .then(data => {
                     if (data.status === 'success' || data.status === 'partial_success') {
                         const generatedBlog =
@@ -61,14 +55,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         const platforms = data.data?.platforms || [];
                         const postedPlatforms = platforms
                             .filter(result => result.status === 'success')
-                            .map(result => result.platform);
+                            .map(result => result.platform)
+                            .join(', ');
                         const devtoResult = platforms.find(r => r.platform === 'devto' && r.status === 'success');
                         chrome.storage.local.get({ publishHistory: [] }, (res) => {
                             const entry = {
                                 title: title,
                                 url: devtoResult?.url || null,
                                 publishedAt: client_time || new Date().toISOString(),
-                                platforms: postedPlatforms
+                                platforms: postedPlatforms ? postedPlatforms.split(', ').filter(p => p) : []
                             };
                             const history = res.publishHistory;
                             history.unshift(entry);
@@ -95,7 +90,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
                         fetch(`${API_BASE_URL}/dashboard/record`, {
                             method: "POST",
-                            headers: authHeaders(userEmail, sessionToken),
+                            headers: { "Content-Type": "application/json", "X-User-Email": userEmail },
                             body: JSON.stringify(entry)
                         }).catch(() => { });
                         chrome.runtime.sendMessage({
@@ -132,18 +127,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             publishingPlatforms: ['devto'],
             publishAsDraft: false,
             userEmail: null,
-            sessionToken: null,
             generatedProblemTitle: 'leetcode-blog'
-        }, async ({ publishingPlatforms, publishAsDraft, userEmail, sessionToken, generatedProblemTitle }) => {
-            if (!userEmail || !sessionToken) {
-                const errMsg = 'Please log in before publishing.';
+        }, async ({ publishingPlatforms, publishAsDraft, userEmail, generatedProblemTitle }) => {
+            if (!userEmail) {
+                const errMsg = 'Please set your email in the extension settings before publishing.';
                 chrome.runtime.sendMessage({ type: 'STATUS_UPDATE', message: errMsg, status: 'error' });
                 sendResponse({ success: false, error: errMsg });
                 return;
             }
             fetch(`${API_BASE_URL}/publish-blog`, {
                 method: "POST",
-                headers: authHeaders(userEmail, sessionToken),
+                headers: { "Content-Type": "application/json", "X-User-Email": userEmail },
                 body: JSON.stringify({
                     title: generatedProblemTitle,
                     content: blog,
@@ -152,7 +146,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     author: "Anonymous Developer"
                 })
             })
-                .then(parseApiResponse)
+                .then(r => r.json())
                 .then(data => {
                     if (data.status === 'success' || data.status === 'partial_success') {
                         const platforms = data.data?.platforms || [];
@@ -179,7 +173,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
                         fetch(`${API_BASE_URL}/dashboard/record`, {
                             method: "POST",
-                            headers: authHeaders(userEmail, sessionToken),
+                            headers: { "Content-Type": "application/json", "X-User-Email": userEmail },
                             body: JSON.stringify(entry)
                         }).catch(() => { });
 
