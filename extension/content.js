@@ -155,10 +155,10 @@
         if (request.type === 'MANUAL_TRIGGER') {
             triggerBlogGeneration(request.custom_prompt || ""); //usage of custom prompt
         } else if (request.type === 'STATUS_UPDATE') {
-            if (request.status === 'success' || request.status === 'error') {
+            const terminalStates = ["success", "error", "warning"];
+            if (terminalStates.includes(request.status)) {
                 isProcessing = false;
             }
-
         }
     });
 
