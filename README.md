@@ -14,6 +14,28 @@
 
 ---
 
+## 📑 Table of Contents
+
+- [📖 What is LeetLog AI?](#-what-is-leetlog-ai)
+- [✨ Features](#-features)
+- [🏗️ Architecture](#️-architecture)
+- [🚀 Getting Started](#-getting-started)
+  - [Prerequisites](#prerequisites)
+  - [1. Clone the Repository](#1-clone-the-repository)
+  - [2. Set Up the Backend](#2-set-up-the-backend)
+  - [3. Run the Reminder Queue](#3-run-the-reminder-queue)
+  - [4. Run the Web Dashboard](#4-run-the-web-dashboard)
+  - [5. Load the Chrome Extension](#5-load-the-chrome-extension)
+  - [6. Use It!](#6-use-it)
+- [📁 Project Structure](#-project-structure)
+- [🔮 Future Scope](#-future-scope-ideas-for-open-source-contributors)
+- [🌐 Deploying the Backend](#-deploying-the-backend)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
+- [🙏 Acknowledgements](#-acknowledgements)
+
+---
+
 ## 📖 What is LeetLog AI?
 
 **LeetLog AI** is a Chrome Extension with a Python FastAPI backend that automatically generates and publishes technical blog posts whenever you solve a LeetCode problem.
