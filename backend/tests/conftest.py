@@ -6,7 +6,6 @@ import importlib
 import sys
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock
-import os
 
 import pytest
 import responses
@@ -68,7 +67,7 @@ class FakeCollection:
     async def _update_one(self, query, update, upsert=False, *args, **kwargs):
         payload = update.get("$set", update)
         matched = False
-        
+
         for record in self.records:
             if self._matches(record, query):
                 matched = True
@@ -85,7 +84,7 @@ class FakeCollection:
                     else:
                         record[key] = val
                 return Mock(matched_count=1, modified_count=1)
-                
+
         if upsert and not matched:
             new_doc = {**query}
             for key, val in payload.items():
@@ -101,7 +100,7 @@ class FakeCollection:
                     new_doc[key] = val
             self.records.append(new_doc)
             return Mock(matched_count=0, modified_count=0, upserted_id="mock-upsert-id")
-            
+
         return Mock(matched_count=0, modified_count=0)
 
     async def _count_documents(self, query, *args, **kwargs):
@@ -145,7 +144,7 @@ class FakeProblemInfoCollection:
         self.update_one = AsyncMock()
         self.count_documents = AsyncMock(return_value=0)
         self.aggregate = AsyncMock()
-        
+
 class FakeDatabase:
     def __init__(self) -> None:
         self.preferences = FakeCollection()
@@ -206,8 +205,8 @@ def app_module(monkeypatch: pytest.MonkeyPatch):
         sys.modules.pop(module_name, None)
 
     module = importlib.import_module("main")
-    
-    # Inject fake database tracking points completely 
+
+    # Inject fake database tracking points completely
     monkeypatch.setattr(module, "db", fake_db)
     monkeypatch.setattr(module, "start_scheduler", Mock(name="start_scheduler"))
     return module
@@ -221,13 +220,23 @@ def client(app_module):
 
 @pytest.fixture
 def mock_generate_blog(app_module, mocker):
+    def fake_generate(*args, **kwargs):
+        return "# Mock blog content"
     return mocker.patch(
         "main.generate_blog",
-        autospec=True,
-        return_value="# Mock blog content",
+        side_effect=fake_generate,
     )
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
+def mock_generate_tags(app_module, mocker):
+    def fake_tags(*args, **kwargs):
+        return ["python", "leetcode"]
+    return mocker.patch(
+        "main.generate_tags",
+        side_effect=fake_tags,
+    )
+
+@pytest.fixture(autouse=True)
 def mock_rate_code_efficiency(app_module, mocker):
     return mocker.patch(
         "main.rate_code_efficiency",

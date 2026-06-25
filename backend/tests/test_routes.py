@@ -196,7 +196,7 @@ class TestGenerateBlogRoute:
             "code": "def twoSum(): pass",
             "author": "testuser",
         }
-        response = client.post("/generate-blog", json=payload)
+        response = client.post("/generate-blog", json=payload, headers=TEST_HEADERS)
 
         # Should return 503 Service Unavailable
         assert response.status_code == 503

@@ -43,12 +43,33 @@ load_dotenv()
 
 logger = logging.getLogger("leetcodeai")
 
+# -----------------------------
+# MongoDB Setup
+# -----------------------------
+mongo_client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URI"))
+db = mongo_client.leetcodeai
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Start background schedulers when server starts.
+    Start background schedulers and initialize MongoDB indexes when server starts.
     """
+    try:
+        # Create indexes to prevent COLLSCAN on dashboard queries
+        await db.problem_info.create_index(
+            [("user_email", 1), ("date", -1)],
+            background=True
+        )
+        await db.users.create_index(
+            [("email", 1)],
+            unique=True,
+            background=True
+        )
+        print("MongoDB indexes ensured successfully.")
+    except Exception as e:
+        logger.error(f"Failed to create MongoDB indexes: {e}")
+
     try:
         start_scheduler()
         print("Reminder scheduler started successfully.")
@@ -95,12 +116,6 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # -----------------------------
 twilio_client = Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
 
-# -----------------------------
-# MongoDB Setup
-# -----------------------------
-mongo_client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URI"))
-
-db = mongo_client.leetcodeai
 
 
 # -----------------------------
@@ -115,7 +130,6 @@ class Problem(BaseModel):
     language: str | None = None
     client_time: str | None = None
     custom_prompt: str | None = None
-    tone: str | None = None
     platforms: list[str] | None = None
     publish_as_draft: bool = False
     share_to_social: bool = True
@@ -447,7 +461,7 @@ def health_check():
 async def create_blog(
     request: Request,
     problem: Problem,
-    current_user: Annotated[dict[str, Any], Depends(get_current_user)],
+    current_user: Annotated[dict[str, Any] | None, Depends(get_optional_user)] = None,
     x_user_email: Optional[str] = Header(default=None),
 ):
     """
@@ -455,7 +469,7 @@ async def create_blog(
     generates a blog post using AI, and publishes it dynamically.
     """
     user_email = require_user(x_user_email)
-    user_id = current_user["id"]
+    user_id = current_user["id"] if current_user else "anonymous"
 
     existing_record = await db.problem_info.find_one(
         {"title": problem.title, "author": problem.author, "status": "success"}
@@ -472,19 +486,6 @@ async def create_blog(
             status_code=400,
             detail="Custom prompt exceeds maximum length of 1000 characters.",
         )
-    allowed_tones = [
-        "beginner",
-        "professional",
-        "academic",
-        "humorous",
-        "concise"
-    ]
-
-    if problem.tone and problem.tone.lower() not in allowed_tones:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid tone selected."
-            )
 
     if not problem.code or problem.code.strip() == "":
         return {"status": "error", "message": "Code is empty, cannot generate blog."}
@@ -505,7 +506,7 @@ async def create_blog(
     devto_creds = await resolve_user_credentials(db, user_id, "devto")
 
     try:
-        await run_in_threadpool(
+        _ = await run_in_threadpool(
             generate_tags,
             problem,
             blog_content,
@@ -607,14 +608,14 @@ class EditedBlog(BaseModel):
 @app.post("/publish-blog")
 async def publish_blog(
     blog: EditedBlog,
-    current_user: Annotated[dict[str, Any], Depends(get_current_user)],
+    current_user: Annotated[dict[str, Any] | None, Depends(get_optional_user)] = None,
     x_user_email: Optional[str] = Header(default=None),
 ):
     """
     Accepts an edited blog post and distributes it using safe user-isolated tokens.
     """
     user_email = require_user(x_user_email)
-    user_id = current_user["id"]
+    user_id = current_user["id"] if current_user else "anonymous"
 
     user_settings = await _settings_for_user(user_id)
     devto_creds = await resolve_user_credentials(db, user_id, "devto")
@@ -693,7 +694,8 @@ async def get_dashboard_stats(
         user_email = current_user["email"]
     else:
         user_email = require_user(x_user_email)
-        user_filter = {"user_email": user_email}
+
+    user_filter = {"user_email": user_email}
 
     try:
         total = await db.problem_info.count_documents(user_filter)
@@ -739,12 +741,14 @@ async def get_dashboard_stats(
         if daily_activity:
             dates_set = {doc["date"] for doc in daily_activity}
             today = datetime.now(timezone.utc).date()
+
             current_date = today
             if current_date.isoformat() not in dates_set:
                 current_date = today - timedelta(days=1)
-                while current_date.isoformat() in dates_set:
-                    current_streak += 1
-                    current_date -= timedelta(days=1)
+
+            while current_date.isoformat() in dates_set:
+                current_streak += 1
+                current_date -= timedelta(days=1)
 
         recent_cursor = (
             db.problem_info.find(

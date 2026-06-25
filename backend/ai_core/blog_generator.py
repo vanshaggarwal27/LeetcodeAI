@@ -3,7 +3,6 @@ import logging
 from fastapi import HTTPException
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from .prompts import build_prompt, get_current_time
 from .prompts import build_prompt, build_tag_prompt, get_current_time
 from .provider_manager import ProviderManager
 
@@ -44,10 +43,6 @@ def generate_blog(problem, credentials: dict | None = None) -> str:
             status_code=503,
             detail="The AI provider is currently unavailable or experiencing high traffic. Please try again later.",
         )
-    if credentials:
-        return manager.generate(prompt, credentials)
-    return manager.generate(prompt)
-
 
 
 def generate_tags(
