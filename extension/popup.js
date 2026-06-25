@@ -293,14 +293,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     chrome.storage.local.get({
         publishingPlatforms: ['devto'],
-        publishAsDraft: false
-    }, ({ publishingPlatforms, publishAsDraft }) => {
+        publishAsDraft: false,
+        selectedTone: 'beginner'
+    }, ({ publishingPlatforms, publishAsDraft, selectedTone }) => {
 
         platformInputs.forEach(input => {
             input.checked = publishingPlatforms.includes(input.value);
         });
 
         draftInput.checked = publishAsDraft;
+        const toneSelect = document.getElementById('toneSelect');
+
+        if (toneSelect) {
+            toneSelect.value = selectedTone;
+        }
     });
 
     const savePublishingSettings = () => {
@@ -321,12 +327,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         chrome.storage.local.set({
             publishingPlatforms: selectedPlatforms,
-            publishAsDraft: draftInput.checked
+            publishAsDraft: draftInput.checked,
+            selectedTone: document.getElementById('toneSelect').value
         });
     };
 
     platformInputs.forEach(input => input.addEventListener('change', savePublishingSettings));
     draftInput.addEventListener('change', savePublishingSettings);
+    document
+        .getElementById('toneSelect')
+        ?.addEventListener('change', savePublishingSettings);
 
     // Load generated blog from storage
     chrome.storage.local.get(
@@ -411,6 +421,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 .getElementById('customPrompt')
                 .value
                 .trim();
+            const tone = document
+                .getElementById('toneSelect')
+                .value;    
 
             if (!tab || !tab.url || !tab.url.includes("leetcode.com/problems/")) {
                 statusEl.innerText = "Please open a LeetCode problem page!";
@@ -435,7 +448,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 await chrome.tabs.sendMessage(tab.id, {
                     type: 'MANUAL_TRIGGER',
-                    custom_prompt: customPrompt
+                    custom_prompt: customPrompt,
+                    tone: tone
                 });
 
             } catch (msgErr) {
@@ -452,11 +466,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (generateBtn) generateBtn.disabled = false;
                 if (copyBtn) copyBtn.disabled = false;
 
-                await chrome.tabs.sendMessage(tab.id, { type: 'MANUAL_TRIGGER' });
+                await chrome.tabs.sendMessage(tab.id, { 
+                    type: 'MANUAL_TRIGGER',
+                    custom_prompt: customPrompt,
+                    tone: tone
+                });
                 setTimeout(async () => {
 
                     try {
-                        await chrome.tabs.sendMessage(tab.id, { type: 'MANUAL_TRIGGER' });
+                        await chrome.tabs.sendMessage(tab.id, {
+                            type: 'MANUAL_TRIGGER',
+                            custom_prompt: customPrompt,
+                            tone: tone
+                        });
                     } catch (e2) {
                         statusEl.innerText = "Error: Please refresh LeetCode page!";
                         statusEl.className = "error-status";
