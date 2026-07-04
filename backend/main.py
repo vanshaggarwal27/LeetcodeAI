@@ -28,7 +28,7 @@ from twilio.rest import Client
 from ai import rate_code_efficiency
 
 # --- UPDATED AI PATH ---
-from ai_core.blog_generator import generate_blog
+from ai_core.blog_generator import generate_blog, generate_tags
 from devto import publish_to_platforms
 from github_integration import push_solution_to_github
 from models.reminder import PublishRecord
