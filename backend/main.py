@@ -43,12 +43,33 @@ load_dotenv()
 
 logger = logging.getLogger("leetcodeai")
 
+# -----------------------------
+# MongoDB Setup
+# -----------------------------
+mongo_client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URI"))
+db = mongo_client.leetcodeai
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Start background schedulers when server starts.
+    Start background schedulers and initialize MongoDB indexes when server starts.
     """
+    try:
+        # Create indexes to prevent COLLSCAN on dashboard queries
+        await db.problem_info.create_index(
+            [("user_email", 1), ("date", -1)],
+            background=True
+        )
+        await db.users.create_index(
+            [("email", 1)],
+            unique=True,
+            background=True
+        )
+        print("MongoDB indexes ensured successfully.")
+    except Exception as e:
+        logger.error(f"Failed to create MongoDB indexes: {e}")
+
     try:
         start_scheduler()
         print("Reminder scheduler started successfully.")
@@ -95,12 +116,6 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # -----------------------------
 twilio_client = Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
 
-# -----------------------------
-# MongoDB Setup
-# -----------------------------
-mongo_client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URI"))
-
-db = mongo_client.leetcodeai
 
 
 # -----------------------------
@@ -454,7 +469,7 @@ async def create_blog(
     generates a blog post using AI, and publishes it dynamically.
     """
     user_email = require_user(x_user_email)
-    user_id = current_user["id"] if current_user else None
+    user_id = current_user["id"] if current_user else "anonymous"
 
     existing_record = await db.problem_info.find_one(
         {"title": problem.title, "author": problem.author, "status": "success"}
@@ -480,12 +495,27 @@ async def create_blog(
     # --- Atomic Lock to prevent Race Conditions ---
     lock_id = f"generate_blog_{problem.title}_{problem.author}_{user_email}"
     try:
-        await db.locks.insert_one({"_id": lock_id, "timestamp": datetime.now(timezone.utc)})
-    except PyMongoError:
-        return {
-            "status": "error",
-            "message": f"Solution for '{problem.title}' has already been published!",
-        }
+        blog_content = await run_in_threadpool(generate_blog, problem, credentials=user_settings)
+        efficiency = rate_code_efficiency(
+            problem.title,
+            problem.code,
+            problem.language or "python"
+        )
+    except Exception as e:
+        return {"status": "error", "message": f"AI provider failure: {str(e)}"}
+
+    # Resolve platform-specific credentials from database securely at runtime
+    devto_creds = await resolve_user_credentials(db, user_id, "devto")
+
+    try:
+        _ = await run_in_threadpool(
+            generate_tags,
+            problem,
+            blog_content,
+            credentials=user_settings,
+        )
+    except Exception:
+        pass
 
     try:
         try:
@@ -612,7 +642,7 @@ async def publish_blog(
     Accepts an edited blog post and distributes it using safe user-isolated tokens.
     """
     user_email = require_user(x_user_email)
-    user_id = current_user["id"] if current_user else None
+    user_id = current_user["id"] if current_user else "anonymous"
 
     user_settings = await _settings_for_user(user_id) if user_id else {}
     devto_creds = await resolve_user_credentials(db, user_id, "devto") if user_id else {}

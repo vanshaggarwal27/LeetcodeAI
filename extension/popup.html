@@ -1,607 +1,884 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>LeetLog AI</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        :root {
-            --primary: #f7a01a;
-            --primary-hover: #ffb340;
-            --bg-dark: #0f111a;
-            --bg-glass: rgba(25, 27, 40, 0.6);
-            --border-glass: rgba(255, 255, 255, 0.08);
-            --text: #ffffff;
-            --text-muted: #a0a5b5;
-            --error: #ff4d4d;
-            --success: #00d26a;
-            --warning: #f7a01a;
-        }
-        
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        body { 
-            width: 340px; 
-            padding: 24px; 
-            font-family: 'Inter', sans-serif; 
-            text-align: center;
-            background: var(--bg-dark);
-            color: var(--text);
-            position: relative;
-            overflow-x: hidden;
-        }
+      :root {
+        --primary: #f7a01a;
+        --primary-hover: #ffb340;
+        --bg-dark: #0f111a;
+        --bg-glass: rgba(25, 27, 40, 0.6);
+        --border-glass: rgba(255, 255, 255, 0.08);
+        --text: #ffffff;
+        --text-muted: #a0a5b5;
+        --error: #ff4d4d;
+        --success: #00d26a;
+        --warning: #f7a01a;
+      }
 
-        /* Animated Background Gradients (Zero Lag, Hardware Accelerated) */
-        body::before, body::after {
-            content: '';
-            position: absolute;
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            filter: blur(80px);
-            z-index: -1;
-            opacity: 0.6;
-            animation: pulse 8s infinite alternate;
-            will-change: transform, opacity;
-        }
-        body::before {
-            background: rgba(247, 160, 26, 0.25);
-            top: -50px;
-            left: -50px;
-        }
-        body::after {
-            background: rgba(138, 43, 226, 0.15);
-            bottom: -50px;
-            right: -50px;
-            animation-delay: -4s;
-        }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-        @keyframes pulse {
-            0% { transform: scale(0.8) translateZ(0); opacity: 0.4; }
-            100% { transform: scale(1.2) translateZ(0); opacity: 0.7; }
-        }
+      body {
+        width: 340px;
+        padding: 24px;
+        font-family: 'Inter', sans-serif;
+        text-align: center;
+        background: var(--bg-dark);
+        color: var(--text);
+        position: relative;
+        overflow: hidden;
+      }
+      body.auth-only {
+        padding: 20px 22px;
+        overflow: hidden;
+      }
 
-        h2 { 
-            font-family: 'Outfit', sans-serif;
-            color: #ffffff; 
-            font-size: 24px; 
-            font-weight: 700; 
-            margin-bottom: 6px;
-            letter-spacing: -0.5px;
-        }
-        
-        p.subtitle { 
-            font-size: 13px; 
-            color: var(--text-muted); 
-            margin-bottom: 24px; 
-            line-height: 1.4;
-        }
-        
-        .input-group {
-            text-align: left;
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            font-family: 'Outfit', sans-serif;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-            letter-spacing: 0.5px;
-        }
-        
-        textarea, input[type="text"] {
-            width: 100%;
-            padding: 12px 14px;
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--border-glass);
-            border-radius: 12px;
-            color: var(--text);
-            font-size: 13px;
-            font-family: 'Inter', sans-serif;
-            outline: none;
-            transition: all 0.3s ease;
-            resize: vertical;
-            min-height: 70px;
-            backdrop-filter: blur(10px);
-        }
-        
-        textarea:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(247, 160, 26, 0.15);
-            background: rgba(0, 0, 0, 0.4);
-        }
+      /* Animated Background Gradients (Zero Lag, Hardware Accelerated) */
+      body::before,
+      body::after {
+        content: '';
+        position: fixed;
+        pointer-events: none;
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        filter: blur(80px);
+        z-index: -1;
+        opacity: 0.6;
+        animation: pulse 8s infinite alternate;
+        will-change: transform, opacity;
+      }
+      body::before {
+        background: rgba(247, 160, 26, 0.25);
+        top: -50px;
+        left: -50px;
+      }
+      body::after {
+        background: rgba(138, 43, 226, 0.15);
+        bottom: -50px;
+        right: -50px;
+        animation-delay: -4s;
+      }
 
-        textarea::placeholder {
-            color: #606575;
+      @keyframes pulse {
+        0% {
+          transform: scale(0.8) translateZ(0);
+          opacity: 0.4;
         }
-        
-        /* Modern Buttons */
-        button { 
-            font-family: 'Outfit', sans-serif;
-            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-            color: #1a1000; 
-            border: none; 
-            padding: 12px 20px; 
-            font-size: 15px; 
-            cursor: pointer; 
-            border-radius: 12px; 
-            width: 100%; 
-            font-weight: 700;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 15px rgba(247, 160, 26, 0.25);
-            position: relative;
-            overflow: hidden;
-            will-change: transform;
+        100% {
+          transform: scale(1.2) translateZ(0);
+          opacity: 0.7;
         }
-        
-        button:hover:not(:disabled) { 
-            transform: translateY(-2px) translateZ(0);
-            box-shadow: 0 6px 20px rgba(247, 160, 26, 0.4);
-        }
-        
-        button:active:not(:disabled) {
-            transform: translateY(1px) translateZ(0);
-        }
-        
-        button:disabled { 
-            background: rgba(255, 255, 255, 0.1); 
-            color: rgba(255, 255, 255, 0.3);
-            cursor: not-allowed; 
-            box-shadow: none;
-        }
-        .spinner {
-            margin-left: 8px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .button-group {
-            display: flex;
-            gap: 12px;
-            margin-top: 10px;
-        }
-        
-        #copyBtn {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text);
-            border: 1px solid var(--border-glass);
-            box-shadow: none;
-        }
-        #copyBtn:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-        
-        /* Platform Pills (Replaces basic checkboxes) */
-        .platform-panel {
-            text-align: left;
-            margin-bottom: 24px;
-            padding: 16px;
-            border: 1px solid var(--border-glass);
-            border-radius: 16px;
-            background: var(--bg-glass);
-            backdrop-filter: blur(12px);
-        }
-        
-        .platform-panel legend {
-            font-family: 'Outfit', sans-serif;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-muted);
-            padding: 0 6px;
-            margin-left: -6px;
-        }
-        
-        .platforms-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 12px;
-        }
-        
-        .platform-pill {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--border-glass);
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            user-select: none;
-        }
-        
-        .platform-pill input {
-            display: none;
-        }
-        
-        .platform-pill:has(input:checked) {
-            background: rgba(247, 160, 26, 0.15);
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-        
-        .draft-option {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid var(--border-glass);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 13px;
-            color: var(--text-muted);
-            cursor: pointer;
-        }
-        /* Custom Checkbox for Draft */
-        .draft-option input {
-            appearance: none;
-            width: 18px;
-            height: 18px;
-            border: 2px solid var(--border-glass);
-            border-radius: 4px;
-            background: rgba(0, 0, 0, 0.2);
-            position: relative;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .draft-option input:checked {
-            background: var(--primary);
-            border-color: var(--primary);
-        }
-        .draft-option input:checked::after {
-            content: '✓';
-            position: absolute;
-            color: #1a1000;
-            font-size: 12px;
-            font-weight: bold;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
+      }
 
-        /* Status & Progress */
-        #status { 
-            margin-top: 20px; 
-            font-weight: 500; 
-            font-size: 13px; 
-            color: var(--text-muted);
-            padding: 12px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid transparent;
-            min-height: 20px;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(8px);
-        }
-        .error-status { 
-            color: var(--error) !important; 
-            background: rgba(255, 77, 77, 0.1) !important;
-            border-color: rgba(255, 77, 77, 0.2) !important;
-        }
-        .success-status { 
-            color: var(--success) !important; 
-            background: rgba(0, 210, 106, 0.1) !important; 
-            border-color: rgba(0, 210, 106, 0.2) !important;
-        }
-        .warning-status { 
-            color: var(--warning) !important; 
-            background: rgba(247, 160, 26, 0.1) !important; 
-            border-color: rgba(247, 160, 26, 0.2) !important;
-        }
-        
-        #progressContainer {
-            background: var(--bg-glass);
-            padding: 16px;
-            border-radius: 16px;
-            border: 1px solid var(--border-glass);
-            margin-top: 20px;
-            backdrop-filter: blur(12px);
-        }
+      h2 {
+        font-family: 'Outfit', sans-serif;
+        color: #ffffff;
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 6px;
+        letter-spacing: -0.5px;
+      }
 
-        .progress-header {
-            font-size: 12px; 
-            color: var(--text-muted); 
-            margin-bottom: 10px; 
-            display: flex; 
-            justify-content: space-between;
-            font-family: 'Outfit', sans-serif;
-            font-weight: 500;
-        }
-        
-        .progress-track {
-            width: 100%; 
-            background: rgba(0, 0, 0, 0.3); 
-            border-radius: 8px; 
-            height: 6px; 
-            overflow: hidden;
-            position: relative;
-        }
+      p.subtitle {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 24px;
+        line-height: 1.4;
+      }
 
-        #progressBar {
-            width: 0%; 
-            background: linear-gradient(90deg, var(--primary), var(--primary-hover)); 
-            height: 100%; 
-            transition: width 0.1s linear;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(247, 160, 26, 0.5);
-            will-change: width;
-        }
-        
-        #dashboardBtn { 
-            margin-top: 12px;
-            background: transparent;
-            font-size: 14px;
-            padding: 12px;
-            color: var(--text-muted);
-            border: 1px solid var(--border-glass);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        
-        #dashboardBtn:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text);
-            border-color: rgba(255, 255, 255, 0.15);
-        }
-        
-        .footer {
-            margin-top: 24px;
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.3);
-            font-weight: 500;
-            letter-spacing: 0.5px;
-        }
+      .input-group {
+        text-align: left;
+        margin-bottom: 20px;
+      }
 
-        /* Editor Section */
-        #previewSection {
-            background: var(--bg-glass);
-            padding: 16px;
-            border-radius: 16px;
-            border: 1px solid var(--border-glass);
-            margin-top: 20px;
-            text-align: left;
-        }
+      label {
+        display: block;
+        font-family: 'Outfit', sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        letter-spacing: 0.5px;
+      }
 
-        #previewSection h3 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 14px;
-            color: #fff;
-            margin-bottom: 12px;
-        }
+      textarea,
+      input[type='text'],
+      input[type='email'],
+      input[type='password'] {
+        width: 100%;
+        padding: 12px 14px;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border-glass);
+        border-radius: 12px;
+        color: var(--text);
+        font-size: 13px;
+        font-family: 'Inter', sans-serif;
+        outline: none;
+        transition: all 0.3s ease;
+        resize: vertical;
+        min-height: 70px;
+        backdrop-filter: blur(10px);
+      }
 
-        #blogEditor {
-            background: rgba(0, 0, 0, 0.3);
-            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-            font-size: 12px;
-            line-height: 1.5;
-            padding: 12px;
-        }
+      textarea:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(247, 160, 26, 0.15);
+        background: rgba(0, 0, 0, 0.4);
+      }
 
-        /* Secondary Actions (Exports) */
-        .export-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-            margin-top: 12px;
-        }
-        
-        .btn-sm {
-            padding: 8px;
-            font-size: 12px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-        }
-        
-        .btn-blue { background: rgba(45, 126, 247, 0.15); color: #60a5fa; border: 1px solid rgba(45, 126, 247, 0.3); box-shadow: none; }
-        .btn-blue:hover:not(:disabled) { background: rgba(45, 126, 247, 0.25); transform: translateY(-1px); border-color: rgba(45, 126, 247, 0.5); }
-        
-        .btn-green { background: rgba(39, 174, 96, 0.15); color: #4ade80; border: 1px solid rgba(39, 174, 96, 0.3); box-shadow: none; }
-        .btn-green:hover:not(:disabled) { background: rgba(39, 174, 96, 0.25); transform: translateY(-1px); border-color: rgba(39, 174, 96, 0.5); }
-        
-        .btn-red { background: rgba(231, 76, 60, 0.15); color: #f87171; border: 1px solid rgba(231, 76, 60, 0.3); box-shadow: none; }
-        .btn-red:hover:not(:disabled) { background: rgba(231, 76, 60, 0.25); transform: translateY(-1px); border-color: rgba(231, 76, 60, 0.5); }
+      textarea::placeholder {
+        color: #606575;
+      }
+      input:-webkit-autofill,
+      input:-webkit-autofill:hover,
+      input:-webkit-autofill:focus {
+        -webkit-text-fill-color: var(--text);
+        box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.2) inset;
+        transition: background-color 5000s ease-in-out 0s;
+      }
 
-        .history-item {
-            display: block;
-            padding: 10px 12px;
-            margin-bottom: 8px;
-            border: 1px solid var(--border-glass);
-            border-radius: 12px;
-            font-size: 12px;
-            color: var(--text);
-            text-decoration: none;
-            background: rgba(0, 0, 0, 0.2);
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        .history-item:hover { background: rgba(247, 160, 26, 0.1); border-color: var(--primary); }
-        .history-item-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Outfit', sans-serif; color: var(--text); }
-        .history-item-meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
-        .history-empty { font-size: 12px; color: var(--text-muted); padding: 12px 0; text-align: center; }
+      /* Modern Buttons */
+      button {
+        font-family: 'Outfit', sans-serif;
+        background: linear-gradient(
+          135deg,
+          var(--primary),
+          var(--primary-hover)
+        );
+        color: #1a1000;
+        border: none;
+        padding: 12px 20px;
+        font-size: 15px;
+        cursor: pointer;
+        border-radius: 12px;
+        width: 100%;
+        font-weight: 700;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 15px rgba(247, 160, 26, 0.25);
+        position: relative;
+        overflow: hidden;
+        will-change: transform;
+      }
 
-        /* ── Email setup screen ── */
-        #emailSetup {
-            display: none;
-            flex-direction: column;
-            gap: 14px;
-            padding: 10px 0;
-            background: var(--bg-glass);
-            border: 1px solid var(--border-glass);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(12px);
+      button:hover:not(:disabled) {
+        transform: translateY(-2px) translateZ(0);
+        box-shadow: 0 6px 20px rgba(247, 160, 26, 0.4);
+      }
+
+      button:active:not(:disabled) {
+        transform: translateY(1px) translateZ(0);
+      }
+
+      button:disabled {
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.3);
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+      .spinner {
+        margin-left: 8px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
         }
-        #emailSetup h3 { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: var(--text); margin: 0; }
-        #emailSetup p  { font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.5; }
-        #emailInput {
-            width: 100%;
-            padding: 12px;
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--border-glass);
-            border-radius: 12px;
-            color: var(--text);
-            font-size: 13px;
-            box-sizing: border-box;
-            outline: none;
-            transition: border-color 0.2s;
-            font-family: 'Inter', sans-serif;
+        100% {
+          transform: rotate(360deg);
         }
-        #emailInput:focus { border-color: var(--primary); }
-        #emailInput.invalid { border-color: var(--error); }
-        .email-hint { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: -8px; }
- 
-        /* ── User badge shown in main UI ── */
-        #userBadge {
-            display: none;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 12px;
-            color: var(--text-muted);
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-glass);
-            border-radius: 12px;
-            padding: 8px 12px;
-            margin-bottom: 16px;
-        }
-        #userBadge span { font-weight: 600; color: var(--primary); }
-        #changeEmailBtn {
-            width: auto; padding: 4px 10px; font-size: 11px;
-            background: rgba(255, 255, 255, 0.1); color: var(--text);
-            border: 1px solid var(--border-glass); box-shadow: none;
-            font-weight: 600; border-radius: 6px;
-        }
-        #changeEmailBtn:hover { background: rgba(255, 255, 255, 0.2); }
+      }
+
+      .button-group {
+        display: flex;
+        gap: 12px;
+        margin-top: 10px;
+      }
+
+      #copyBtn {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text);
+        border: 1px solid var(--border-glass);
+        box-shadow: none;
+      }
+      #copyBtn:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+
+      /* Platform Pills (Replaces basic checkboxes) */
+      .platform-panel {
+        text-align: left;
+        margin-bottom: 24px;
+        padding: 16px;
+        border: 1px solid var(--border-glass);
+        border-radius: 16px;
+        background: var(--bg-glass);
+        backdrop-filter: blur(12px);
+      }
+
+      .platform-panel legend {
+        font-family: 'Outfit', sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        padding: 0 6px;
+        margin-left: -6px;
+      }
+
+      .platforms-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .platform-pill {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border-glass);
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        user-select: none;
+      }
+
+      .platform-pill input {
+        display: none;
+      }
+
+      .platform-pill:has(input:checked) {
+        background: rgba(247, 160, 26, 0.15);
+        border-color: var(--primary);
+        color: var(--primary);
+      }
+
+      .draft-option {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-glass);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: var(--text-muted);
+        cursor: pointer;
+      }
+      /* Custom Checkbox for Draft */
+      .draft-option input {
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border: 2px solid var(--border-glass);
+        border-radius: 4px;
+        background: rgba(0, 0, 0, 0.2);
+        position: relative;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .draft-option input:checked {
+        background: var(--primary);
+        border-color: var(--primary);
+      }
+      .draft-option input:checked::after {
+        content: '✓';
+        position: absolute;
+        color: #1a1000;
+        font-size: 12px;
+        font-weight: bold;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      /* Status & Progress */
+      #status {
+        margin-top: 20px;
+        font-weight: 500;
+        font-size: 13px;
+        color: var(--text-muted);
+        padding: 12px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid transparent;
+        min-height: 20px;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(8px);
+      }
+      .error-status {
+        color: var(--error) !important;
+        background: rgba(255, 77, 77, 0.1) !important;
+        border-color: rgba(255, 77, 77, 0.2) !important;
+      }
+      .success-status {
+        color: var(--success) !important;
+        background: rgba(0, 210, 106, 0.1) !important;
+        border-color: rgba(0, 210, 106, 0.2) !important;
+      }
+      .warning-status {
+        color: var(--warning) !important;
+        background: rgba(247, 160, 26, 0.1) !important;
+        border-color: rgba(247, 160, 26, 0.2) !important;
+      }
+
+      #progressContainer {
+        background: var(--bg-glass);
+        padding: 16px;
+        border-radius: 16px;
+        border: 1px solid var(--border-glass);
+        margin-top: 20px;
+        backdrop-filter: blur(12px);
+      }
+
+      .progress-header {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 500;
+      }
+
+      .progress-track {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 8px;
+        height: 6px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      #progressBar {
+        width: 0%;
+        background: linear-gradient(
+          90deg,
+          var(--primary),
+          var(--primary-hover)
+        );
+        height: 100%;
+        transition: width 0.1s linear;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(247, 160, 26, 0.5);
+        will-change: width;
+      }
+
+      #dashboardBtn {
+        margin-top: 12px;
+        background: transparent;
+        font-size: 14px;
+        padding: 12px;
+        color: var(--text-muted);
+        border: 1px solid var(--border-glass);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      #dashboardBtn:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text);
+        border-color: rgba(255, 255, 255, 0.15);
+      }
+
+      .footer {
+        margin-top: 24px;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.3);
+        font-weight: 500;
+        letter-spacing: 0.5px;
+      }
+
+      /* Editor Section */
+      #previewSection {
+        background: var(--bg-glass);
+        padding: 16px;
+        border-radius: 16px;
+        border: 1px solid var(--border-glass);
+        margin-top: 20px;
+        text-align: left;
+      }
+
+      #previewSection h3 {
+        font-family: 'Outfit', sans-serif;
+        font-size: 14px;
+        color: #fff;
+        margin-bottom: 12px;
+      }
+
+      #blogEditor {
+        background: rgba(0, 0, 0, 0.3);
+        font-family:
+          'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        font-size: 12px;
+        line-height: 1.5;
+        padding: 12px;
+      }
+
+      /* Secondary Actions (Exports) */
+      .export-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .btn-sm {
+        padding: 8px;
+        font-size: 12px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+      }
+
+      .btn-blue {
+        background: rgba(45, 126, 247, 0.15);
+        color: #60a5fa;
+        border: 1px solid rgba(45, 126, 247, 0.3);
+        box-shadow: none;
+      }
+      .btn-blue:hover:not(:disabled) {
+        background: rgba(45, 126, 247, 0.25);
+        transform: translateY(-1px);
+        border-color: rgba(45, 126, 247, 0.5);
+      }
+
+      .btn-green {
+        background: rgba(39, 174, 96, 0.15);
+        color: #4ade80;
+        border: 1px solid rgba(39, 174, 96, 0.3);
+        box-shadow: none;
+      }
+      .btn-green:hover:not(:disabled) {
+        background: rgba(39, 174, 96, 0.25);
+        transform: translateY(-1px);
+        border-color: rgba(39, 174, 96, 0.5);
+      }
+
+      .btn-red {
+        background: rgba(231, 76, 60, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(231, 76, 60, 0.3);
+        box-shadow: none;
+      }
+      .btn-red:hover:not(:disabled) {
+        background: rgba(231, 76, 60, 0.25);
+        transform: translateY(-1px);
+        border-color: rgba(231, 76, 60, 0.5);
+      }
+
+      .history-item {
+        display: block;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        border: 1px solid var(--border-glass);
+        border-radius: 12px;
+        font-size: 12px;
+        color: var(--text);
+        text-decoration: none;
+        background: rgba(0, 0, 0, 0.2);
+        transition: all 0.2s;
+        cursor: pointer;
+      }
+      .history-item:hover {
+        background: rgba(247, 160, 26, 0.1);
+        border-color: var(--primary);
+      }
+      .history-item-title {
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-family: 'Outfit', sans-serif;
+        color: var(--text);
+      }
+      .history-item-meta {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 4px;
+      }
+      .history-empty {
+        font-size: 12px;
+        color: var(--text-muted);
+        padding: 12px 0;
+        text-align: center;
+      }
+
+      /* ── Email setup screen ── */
+      #emailSetup {
+        display: none;
+        flex-direction: column;
+        gap: 12px;
+        background: var(--bg-glass);
+        border: 1px solid var(--border-glass);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 0;
+        backdrop-filter: blur(12px);
+      }
+      #emailSetup h3 {
+        font-family: 'Outfit', sans-serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+        margin: 0;
+      }
+      #emailSetup p {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin: 0;
+        line-height: 1.5;
+      }
+      #emailInput,
+      #passwordInput {
+        width: 100%;
+        padding: 12px;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border-glass);
+        border-radius: 12px;
+        color: var(--text);
+        font-size: 13px;
+        box-sizing: border-box;
+        min-height: auto;
+        outline: none;
+        transition: border-color 0.2s;
+        font-family: 'Inter', sans-serif;
+      }
+      #emailInput:focus,
+      #passwordInput:focus {
+        border-color: var(--primary);
+      }
+      #emailInput.invalid,
+      #passwordInput.invalid {
+        border-color: var(--error);
+      }
+      .email-hint {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.4);
+        margin-top: -8px;
+      }
+      #loginStatus {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: var(--error);
+        min-height: 18px;
+      }
+      #loginStatus.info-status {
+        color: var(--primary);
+      }
+      .auth-switch {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+      .auth-switch button {
+        width: auto;
+        padding: 0;
+        background: none;
+        border: none;
+        box-shadow: none;
+        color: var(--primary);
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .auth-switch button:hover:not(:disabled) {
+        transform: none;
+        box-shadow: none;
+        text-decoration: underline;
+      }
+
+      /* ── User badge shown in main UI ── */
+      #userBadge {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 12px;
+        color: var(--text-muted);
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border-glass);
+        border-radius: 12px;
+        padding: 8px 12px;
+        margin-bottom: 16px;
+      }
+      #userBadge span {
+        font-weight: 600;
+        color: var(--primary);
+      }
+      #changeEmailBtn {
+        width: auto;
+        padding: 4px 10px;
+        font-size: 11px;
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text);
+        border: 1px solid var(--border-glass);
+        box-shadow: none;
+        font-weight: 600;
+        border-radius: 6px;
+      }
+      #changeEmailBtn:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
     </style>
-</head>
-<body>
-        <!-- ── Email setup (shown on first launch) ── -->
+  </head>
+  <body>
+    <!-- ── Email setup (shown on first launch) ── -->
     <div id="emailSetup">
-        <h3>👋 Welcome to LeetLog AI</h3>
-        <p>Enter your email so your stats are saved separately from other users.</p>
-        <input type="email" id="emailInput" placeholder="you@example.com" />
-        <p class="email-hint">Stored locally and only used to identify your data on the backend.</p>
-        <button id="saveEmailBtn">Continue →</button>
+      <h3 id="authTitle">Log in to LeetLog AI</h3>
+      <p id="authDescription">
+        Connect your account so generated blogs publish to the right user
+        profile.
+      </p>
+      <input type="email" id="emailInput" placeholder="you@example.com" />
+      <input type="password" id="passwordInput" placeholder="Password" />
+      <p id="loginStatus" role="status"></p>
+      <button id="saveEmailBtn">Log In</button>
+      <p class="auth-switch">
+        <span id="authSwitchText">New here?</span>
+        <button id="toggleAuthMode" type="button">Create an account</button>
+      </p>
     </div>
- 
+
     <!-- ── User badge (shown in main UI) ── -->
     <div id="userBadge">
-        Logged in as <span id="userEmailDisplay">—</span>
-        <button id="changeEmailBtn">Change</button>
+      Logged in as <span id="userEmailDisplay">—</span>
+      <button id="changeEmailBtn">Log out</button>
     </div>
 
     <h2>LeetLog AI</h2>
-    <p class="subtitle">Generate & publish stunning LeetCode blogs instantly.</p>
-    
+    <p class="subtitle">
+      Generate & publish stunning LeetCode blogs instantly.
+    </p>
+
     <div class="input-group">
-        <label for="customPrompt">Custom Prompt (Optional)</label>
-        <textarea id="customPrompt" placeholder="e.g. Make it more humorous, explain time complexity in detail..."></textarea>
+      <label for="customPrompt">Custom Prompt (Optional)</label>
+      <textarea
+        id="customPrompt"
+        placeholder="e.g. Make it more humorous, explain time complexity in detail..."
+      ></textarea>
     </div>
 
     <fieldset class="platform-panel">
-        <legend>Publish Destinations</legend>
-        <div class="platforms-grid">
-            <label class="platform-pill">
-                <input type="checkbox" name="platform" value="devto" checked>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7.42 10.05c-.18-.16-.46-.23-.84-.23H6l.02 2.44.04 2.45.56-.02c.41 0 .63-.07.83-.26.24-.24.26-.36.26-2.2 0-1.91-.02-1.96-.29-2.18zM0 4.94v14.12h24V4.94H0zM8.56 15.3c-.44.58-1.06.77-2.53.77H4.71V8.53h1.4c1.67 0 2.16.18 2.53.9.2.4.2 1.48.2 2.9v1.9c0 1.25-.03 1.57-.28 2.07zm5.55-1.93h-2.31v1.17h2.46v1.54h-4.2V8.53h4.08v1.51h-2.29v1.18h2.26v1.15zm5.52-5.4l-1.48 4.79c-.82 2.65-1.52 4.8-1.56 4.78-.05-.03-.76-2.24-1.58-4.9l-1.5-4.83h1.8l.84 2.87c.46 1.57.86 2.94.88 3.03.03-.09.43-1.46.88-3.05l.84-2.85h1.89z"/></svg>
-                Dev.to
-            </label>
-            <label class="platform-pill">
-                <input type="checkbox" name="platform" value="hashnode">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M22.351 8.019l-6.37-6.37a5.63 5.63 0 0 0-7.962 0l-6.37 6.37a5.63 5.63 0 0 0 0 7.962l6.37 6.37a5.63 5.63 0 0 0 7.962 0l6.37-6.37a5.63 5.63 0 0 0 0-7.962zM12 15.953a3.953 3.953 0 1 1 0-7.906 3.953 3.953 0 0 1 0 7.906z"/></svg>
-                Hashnode
-            </label>
-            <label class="platform-pill">
-                <input type="checkbox" name="platform" value="medium">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6.772 11.977c0 3.125-2.28 5.658-5.093 5.658S0 15.102 0 11.977 2.279 6.319 5.093 6.319s5.093 2.533 5.093 5.658zm5.286 0c0 3.023-1.127 5.474-2.518 5.474s-2.518-2.451-2.518-5.474 1.127-5.474 2.518-5.474 2.518 2.45 2.518 5.474zm2.493 0c0 2.7-.482 4.887-1.077 4.887s-1.076-2.187-1.076-4.887.482-4.887 1.076-4.887 1.077 2.187 1.077 4.887z"/></svg>
-                Medium
-            </label>
-            <label class="platform-pill">
-                <input type="checkbox" name="platform" value="webhook">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-                Webhook
-            </label>
-        </div>
-        <label class="draft-option">
-            <input type="checkbox" id="draftMode">
-            Publish as draft
+      <legend>Publish Destinations</legend>
+      <div class="platforms-grid">
+        <label class="platform-pill">
+          <input type="checkbox" name="platform" value="devto" checked />
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M7.42 10.05c-.18-.16-.46-.23-.84-.23H6l.02 2.44.04 2.45.56-.02c.41 0 .63-.07.83-.26.24-.24.26-.36.26-2.2 0-1.91-.02-1.96-.29-2.18zM0 4.94v14.12h24V4.94H0zM8.56 15.3c-.44.58-1.06.77-2.53.77H4.71V8.53h1.4c1.67 0 2.16.18 2.53.9.2.4.2 1.48.2 2.9v1.9c0 1.25-.03 1.57-.28 2.07zm5.55-1.93h-2.31v1.17h2.46v1.54h-4.2V8.53h4.08v1.51h-2.29v1.18h2.26v1.15zm5.52-5.4l-1.48 4.79c-.82 2.65-1.52 4.8-1.56 4.78-.05-.03-.76-2.24-1.58-4.9l-1.5-4.83h1.8l.84 2.87c.46 1.57.86 2.94.88 3.03.03-.09.43-1.46.88-3.05l.84-2.85h1.89z"
+            />
+          </svg>
+          Dev.to
         </label>
+        <label class="platform-pill">
+          <input type="checkbox" name="platform" value="hashnode" />
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M22.351 8.019l-6.37-6.37a5.63 5.63 0 0 0-7.962 0l-6.37 6.37a5.63 5.63 0 0 0 0 7.962l6.37 6.37a5.63 5.63 0 0 0 7.962 0l6.37-6.37a5.63 5.63 0 0 0 0-7.962zM12 15.953a3.953 3.953 0 1 1 0-7.906 3.953 3.953 0 0 1 0 7.906z"
+            />
+          </svg>
+          Hashnode
+        </label>
+        <label class="platform-pill">
+          <input type="checkbox" name="platform" value="medium" />
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M6.772 11.977c0 3.125-2.28 5.658-5.093 5.658S0 15.102 0 11.977 2.279 6.319 5.093 6.319s5.093 2.533 5.093 5.658zm5.286 0c0 3.023-1.127 5.474-2.518 5.474s-2.518-2.451-2.518-5.474 1.127-5.474 2.518-5.474 2.518 2.45 2.518 5.474zm2.493 0c0 2.7-.482 4.887-1.077 4.887s-1.076-2.187-1.076-4.887.482-4.887 1.076-4.887 1.077 2.187 1.077 4.887z"
+            />
+          </svg>
+          Medium
+        </label>
+        <label class="platform-pill">
+          <input type="checkbox" name="platform" value="webhook" />
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+            ></path>
+            <path
+              d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+            ></path>
+          </svg>
+          Webhook
+        </label>
+      </div>
+      <label class="draft-option">
+        <input type="checkbox" id="draftMode" />
+        Publish as draft
+      </label>
     </fieldset>
-    
-<div class="button-group">
-    <button id="generate-blog-btn" class="btn-primary">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; margin-right: 4px;">
-            <path d="M12 20h9"></path>
-            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+
+    <div class="button-group">
+      <button id="generate-blog-btn" class="btn-primary">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          style="vertical-align: text-bottom; margin-right: 4px"
+        >
+          <path d="M12 20h9"></path>
+          <path
+            d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"
+          ></path>
         </svg>
         <span id="btn-text">Generate Blog</span>
-        <span id="btn-spinner" class="spinner" style="display: none; margin-left: 4px;">⏳</span>
-    </button>
-    <button id="copyBtn">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; margin-right: 4px;">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        <span
+          id="btn-spinner"
+          class="spinner"
+          style="display: none; margin-left: 4px"
+          >⏳</span
+        >
+      </button>
+      <button id="copyBtn">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          style="vertical-align: text-bottom; margin-right: 4px"
+        >
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path
+            d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+          ></path>
         </svg>
         Copy
-    </button>
-</div>
+      </button>
+    </div>
 
     <!-- Hidden Sections -->
-    <div id="previewSection" style="display:none;">
-        <h3>Preview & Edit Blog</h3>
-        <textarea id="blogEditor"></textarea>
-        <div class="button-group" style="margin-top:12px;">
-            <button id="publishBtn" class="btn-green" style="color: #fff; border: none; background: #27ae60;">Publish</button>
-            <button id="cancelPreviewBtn" class="btn-red" style="color: #fff; border: none; background: #e74c3c;">Cancel</button>
-        </div>
+    <div id="previewSection" style="display: none">
+      <h3>Preview & Edit Blog</h3>
+      <textarea id="blogEditor"></textarea>
+      <div class="button-group" style="margin-top: 12px">
+        <button
+          id="publishBtn"
+          class="btn-green"
+          style="color: #fff; border: none; background: #27ae60"
+        >
+          Publish
+        </button>
+        <button
+          id="cancelPreviewBtn"
+          class="btn-red"
+          style="color: #fff; border: none; background: #e74c3c"
+        >
+          Cancel
+        </button>
+      </div>
     </div>
 
-    <div id="exportSection" style="display:none;" class="export-grid">
-        <button id="exportMarkdownBtn" class="btn-sm btn-blue">MD</button>
-        <button id="exportHTMLBtn" class="btn-sm btn-green">HTML</button>
-        <button id="exportPDFBtn" class="btn-sm btn-red">PDF</button>
+    <div id="exportSection" style="display: none" class="export-grid">
+      <button id="exportMarkdownBtn" class="btn-sm btn-blue">MD</button>
+      <button id="exportHTMLBtn" class="btn-sm btn-green">HTML</button>
+      <button id="exportPDFBtn" class="btn-sm btn-red">PDF</button>
     </div>
-    
-    <div id="progressContainer" style="display:none;">
-        <div class="progress-header">
-            <span id="progressText">Generating AI Magic...</span>
-            <span id="timeLeft" style="color: var(--primary);">~15s</span>
-        </div>
-        <div class="progress-track">
-            <div id="progressBar"></div>
-        </div>
+
+    <div id="progressContainer" style="display: none">
+      <div class="progress-header">
+        <span id="progressText">Generating AI Magic...</span>
+        <span id="timeLeft" style="color: var(--primary)">~15s</span>
+      </div>
+      <div class="progress-track">
+        <div id="progressBar"></div>
+      </div>
     </div>
-    
+
     <div id="status">Ready to blog! 🚀</div>
-    <details id="historySection" style="margin-top:20px; text-align:left; background: var(--bg-glass); border: 1px solid var(--border-glass); border-radius: 16px; padding: 12px; backdrop-filter: blur(12px);">
-        <summary style="cursor:pointer; font-size:12px; font-weight:600; text-transform:uppercase; color:var(--text-muted); padding:4px 0; user-select:none; font-family: 'Outfit', sans-serif;">📋 Recent Posts</summary>
-        <div id="historyList" style="margin-top:12px; max-height:160px; overflow-y:auto; padding-right: 4px;"></div>
+    <details
+      id="historySection"
+      style="
+        margin-top: 20px;
+        text-align: left;
+        background: var(--bg-glass);
+        border: 1px solid var(--border-glass);
+        border-radius: 16px;
+        padding: 12px;
+        backdrop-filter: blur(12px);
+      "
+    >
+      <summary
+        style="
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 600;
+          text-transform: uppercase;
+          color: var(--text-muted);
+          padding: 4px 0;
+          user-select: none;
+          font-family: 'Outfit', sans-serif;
+        "
+      >
+        📋 Recent Posts
+      </summary>
+      <div
+        id="historyList"
+        style="
+          margin-top: 12px;
+          max-height: 160px;
+          overflow-y: auto;
+          padding-right: 4px;
+        "
+      ></div>
     </details>
 
     <button id="dashboardBtn">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; margin-right: 4px;"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
-        View Dashboard
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        style="vertical-align: text-bottom; margin-right: 4px"
+      >
+        <path d="M3 3v18h18" />
+        <path d="M18 17V9" />
+        <path d="M13 17V5" />
+        <path d="M8 17v-3" />
+      </svg>
+      View Dashboard
     </button>
-    <div class="footer">
-        Powered by AI & LeetLog
-    </div>
-    
+    <div class="footer">Powered by AI & LeetLog</div>
+
     <script src="html2pdf.bundle.min.js"></script>
     <script src="popup.js"></script>
-</body>
+  </body>
 </html>

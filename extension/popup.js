@@ -1,52 +1,146 @@
 // ── Email setup ──────────────────────────────────────────────
-const MAIN_IDS = ['generateBtn','copyBtn','customPrompt',
-    '.input-group','.platform-panel','#exportSection',
-    '#previewSection','#progressContainer','#status','#dashboardBtn',
-    '.footer','h2','p'];
+const API_BASE_URL = "https://leetcodeai-backend.onrender.com";
+
+const MAIN_IDS = ['generate-blog-btn', 'copyBtn', 'customPrompt',
+    '.input-group', '.platform-panel', '#exportSection',
+    '#previewSection', '#progressContainer', '#status', '#dashboardBtn', '#historySection',
+    '.footer', 'h2', 'p'];
+let authMode = 'login';
+
+function setAuthStatus(message, type = 'error') {
+    const loginStatus = document.getElementById('loginStatus');
+    loginStatus.textContent = message;
+    loginStatus.className = type === 'info' ? 'info-status' : '';
+}
+
+function setAuthMode(mode) {
+    authMode = mode;
+    const isSignup = authMode === 'signup';
+    document.getElementById('authTitle').textContent = isSignup ? 'Create your LeetLog AI account' : 'Log in to LeetLog AI';
+    document.getElementById('authDescription').textContent = isSignup
+        ? 'Create an account to keep your generated blogs tied to your profile.'
+        : 'Connect your account so generated blogs publish to the right user profile.';
+    document.getElementById('saveEmailBtn').textContent = isSignup ? 'Sign Up' : 'Log In';
+    document.getElementById('authSwitchText').textContent = isSignup ? 'Already have an account?' : 'New here?';
+    document.getElementById('toggleAuthMode').textContent = isSignup ? 'Log in' : 'Create an account';
+    setAuthStatus('', 'error');
+}
 
 function showEmailSetup() {
+    document.body.classList.add('auth-only');
+    setAuthMode(authMode);
     document.getElementById('emailSetup').style.display = 'flex';
     document.getElementById('userBadge').style.display = 'none';
+    document.getElementById('passwordInput').value = '';
+    setAuthStatus('', 'error');
     // hide main content while setup is shown
-    ['generateBtn','copyBtn','dashboardBtn'].forEach(id => {
+    ['generate-blog-btn', 'copyBtn', 'dashboardBtn'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
     });
     document.querySelectorAll('.input-group, .platform-panel, .button-group, .footer, #status, #exportSection, #previewSection, #progressContainer, h2, body > p')
         .forEach(el => el.style.display = 'none');
+    const historySection = document.getElementById('historySection');
+    if (historySection) historySection.style.display = 'none';
 }
 
 function showMainUI(email) {
+    document.body.classList.remove('auth-only');
     document.getElementById('emailSetup').style.display = 'none';
     const badge = document.getElementById('userBadge');
     badge.style.display = 'flex';
     document.getElementById('userEmailDisplay').textContent = email;
     // restore main content
-    ['generateBtn','copyBtn','dashboardBtn'].forEach(id => {
+    ['generate-blog-btn', 'copyBtn', 'dashboardBtn'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = '';
     });
     document.querySelectorAll('.input-group, .platform-panel, .button-group, .footer, #status, h2, body > p')
         .forEach(el => el.style.display = '');
+    const historySection = document.getElementById('historySection');
+    if (historySection) historySection.style.display = '';
 }
 
-document.getElementById('saveEmailBtn').addEventListener('click', () => {
+document.getElementById('saveEmailBtn').addEventListener('click', async () => {
     const input = document.getElementById('emailInput');
+    const passwordInput = document.getElementById('passwordInput');
+    const loginBtn = document.getElementById('saveEmailBtn');
     const email = input.value.trim();
+    const password = passwordInput.value;
+    setAuthStatus('', 'error');
+
     if (!email || !email.includes('@')) {
         input.classList.add('invalid');
         return;
     }
     input.classList.remove('invalid');
-    chrome.storage.local.set({ userEmail: email }, () => showMainUI(email));
+
+    if (!password) {
+        passwordInput.classList.add('invalid');
+        return;
+    }
+    passwordInput.classList.remove('invalid');
+
+    loginBtn.disabled = true;
+    loginBtn.textContent = authMode === 'signup' ? 'Signing up...' : 'Logging in...';
+
+    try {
+        const endpoint = authMode === 'signup' ? 'register' : 'login';
+        const response = await fetch(`${API_BASE_URL}/auth/${endpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || !data.token || !data.user) {
+            const rawMessage = data.detail || data.message || '';
+            if (response.status === 401 && authMode === 'login') {
+                setAuthMode('signup');
+                setAuthStatus('No account found with these details. Create an account below.', 'info');
+                return;
+            }
+            if (response.status === 409 && authMode === 'signup') {
+                setAuthMode('login');
+                setAuthStatus('Account already exists. Log in instead.', 'info');
+                return;
+            }
+            if (/database|mongodb/i.test(rawMessage)) {
+                throw new Error('Login service is temporarily unavailable. Please try again later.');
+            }
+            if (response.status === 400 && /password/i.test(rawMessage)) {
+                throw new Error(rawMessage);
+            }
+            throw new Error(rawMessage || `${authMode === 'signup' ? 'Sign up' : 'Login'} failed. Please try again.`);
+        }
+
+        chrome.storage.local.set({
+            userEmail: data.user.email,
+            userId: data.user.id,
+            sessionToken: data.token
+        }, () => showMainUI(data.user.email));
+    } catch (error) {
+        setAuthStatus(error.message);
+    } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = authMode === 'signup' ? 'Sign Up' : 'Log In';
+    }
 });
 
-document.getElementById('emailInput').addEventListener('input', function() {
+document.getElementById('toggleAuthMode').addEventListener('click', () => {
+    setAuthMode(authMode === 'login' ? 'signup' : 'login');
+});
+
+document.getElementById('emailInput').addEventListener('input', function () {
+    this.classList.remove('invalid');
+});
+
+document.getElementById('passwordInput').addEventListener('input', function () {
     this.classList.remove('invalid');
 });
 
 document.getElementById('changeEmailBtn').addEventListener('click', () => {
-    chrome.storage.local.remove('userEmail', showEmailSetup);
+    chrome.storage.local.remove(['userEmail', 'userId', 'sessionToken'], showEmailSetup);
 });
 // ─────────────────────────────────────────────────────────────
 
@@ -58,7 +152,7 @@ let progressInterval;
 let generationTimeout;
 
 function resetGenerationUI() {
-    const btn = document.getElementById("generateBtn");
+    const btn = document.getElementById("generate-blog-btn");
     const progressContainer = document.getElementById("progressContainer");
     const copyBtn = document.getElementById('copyBtn');
 
@@ -188,8 +282,8 @@ async function copyBlogToClipboard() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Check email on every open
-    chrome.storage.local.get({ userEmail: null }, ({ userEmail }) => {
-        if (userEmail) showMainUI(userEmail);
+    chrome.storage.local.get({ userEmail: null, sessionToken: null }, ({ userEmail, sessionToken }) => {
+        if (userEmail && sessionToken) showMainUI(userEmail);
         else showEmailSetup();
     });
 
@@ -437,7 +531,7 @@ chrome.runtime.onMessage.addListener((request) => {
 chrome.runtime.onMessage.addListener((request) => {
 
     const statusEl = document.getElementById('status');
-    const btn = document.getElementById('generateBtn');
+    const btn = document.getElementById('generate-blog-btn');
     const copyBtn = document.getElementById('copyBtn');
 
     if (request.type === 'STATUS_UPDATE') {
@@ -453,7 +547,6 @@ chrome.runtime.onMessage.addListener((request) => {
             statusEl.innerText = request.message || "Successfully posted";
             statusEl.className = "success-status";
             btn.disabled = false;
-            btn.innerText = "Generate Blog";
             btn.style.cursor = "pointer";
 
         } else if (request.status === 'error') {
@@ -462,7 +555,6 @@ chrome.runtime.onMessage.addListener((request) => {
 
             statusEl.className = "error-status";
             btn.disabled = false;
-            btn.innerText = "Generate Blog";
             btn.style.cursor = "pointer";
 
         } else if (request.status === 'warning') {
@@ -471,7 +563,6 @@ chrome.runtime.onMessage.addListener((request) => {
 
             statusEl.className = "warning-status";
             btn.disabled = false;
-            btn.innerText = "Generate Blog";
             btn.style.cursor = "pointer";
         }
 

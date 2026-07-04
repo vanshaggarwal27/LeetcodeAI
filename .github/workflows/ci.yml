@@ -51,6 +51,8 @@ jobs:
       TWILIO_PHONE_NUMBER: "+10000000000"
       MONGODB_URI: mongodb://localhost:27017/test
       ELEVENLABS_API_KEY: test-elevenlabs-key
+      ENCRYPTION_KEY: -CDr5C80aFVRKszE6j4wyt3Jz9e9RyE2axn88AFDk4s=
+      APP_SECRET_KEY: test-app-secret-key-1234567890
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

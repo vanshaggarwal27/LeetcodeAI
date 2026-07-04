@@ -1,5 +1,4 @@
-//const API_BASE_URL = "https://leetcodeai-backend.onrender.com";
-const API_BASE_URL = "http://localhost:10000";
+const API_BASE_URL = "https://leetcodeai-backend.onrender.com";
 
 //fixes timezone for IST and all non-UTC users
 function getLocalDateStr(date) {
@@ -10,11 +9,11 @@ function getLocalDateStr(date) {
   return `${year}-${month}-${day}`;
 }
 
-const colors = { devto:'#3b49df', hashnode:'#2962ff', medium:'#00ab6c', webhook:'#f7a01a' };
+const colors = { devto: '#3b49df', hashnode: '#2962ff', medium: '#00ab6c', webhook: '#f7a01a' };
 
 function escapeHTML(str) {
   if (!str) return '';
-  return String(str).replace(/[&<>'"]/g, 
+  return String(str).replace(/[&<>'"]/g,
     tag => ({
       '&': '&amp;',
       '<': '&lt;',
@@ -26,13 +25,13 @@ function escapeHTML(str) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  chrome.storage.local.get({ userEmail: null }, ({ userEmail }) => {
-    if (!userEmail) {
+  chrome.storage.local.get({ userEmail: null, sessionToken: null }, ({ userEmail, sessionToken }) => {
+    if (!userEmail || !sessionToken) {
       showBanner('No email set — open the extension and enter your email first.');
       return;
     }
     setLoading(true);
-    fetchStatsFromBackend(userEmail)
+    fetchStatsFromBackend(userEmail, sessionToken)
       .catch(() => {
         showBanner("Couldn't reach backend — showing local data.");
         return loadFromLocalStorage(userEmail);
@@ -41,9 +40,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-async function fetchStatsFromBackend(email) {
+async function fetchStatsFromBackend(email, sessionToken) {
   const res = await fetch(`${API_BASE_URL}/dashboard/stats`, {
-    headers: { 'X-User-Email': email }
+    headers: {
+      'X-User-Email': email,
+      'Authorization': `Bearer ${sessionToken}`
+    }
   });
   if (!res.ok) throw new Error('Bad response');
   const { total_posts, platform_counts, week_activity, recent, current_streak } = await res.json();
@@ -60,10 +62,10 @@ async function fetchStatsFromBackend(email) {
   if (Array.isArray(platform_counts)) {
     platform_counts.forEach(item => countsMap[item.name] = item.value);
   } else {
-    countsMap = platform_counts || {}; 
+    countsMap = platform_counts || {};
   }
   renderPlatformBarsFromMap(countsMap);
-  
+
   renderHistory(recent);
 }
 
@@ -95,14 +97,14 @@ function calculateStreakFromWeekMap(weekMap) {
     d.setDate(d.getDate() - i);
     const key = getLocalDateStr(d);
     if (weekMap[key]) streak++;
-    else if (i > 0) break; 
+    else if (i > 0) break;
   }
   return streak;
 }
 
 // --- Render from backend shapes ---
 function renderWeekGridFromMap(weekMap) {
-  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const grid = document.getElementById('weekGrid');
   grid.innerHTML = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
@@ -128,7 +130,7 @@ function renderPlatformBarsFromMap(counts) {
     <div class="platform-bar">
       <span class="platform-name">${escapeHTML(name)}</span>
       <div class="bar-track">
-        <div class="bar-fill" style="width:${(count/max)*100}%;background:${colors[name]||'#f7a01a'}"></div>
+        <div class="bar-fill" style="width:${(count / max) * 100}%;background:${colors[name] || '#f7a01a'}"></div>
       </div>
       <span class="bar-count">${count}</span>
     </div>`).join('');
@@ -151,8 +153,8 @@ function calculateStreak(history) {
   const uniqueDates = [...new Set(history.map(h => getDateStr(h.date)))].sort().reverse();
   let streak = 0;
   for (const dateStr of uniqueDates) {
-    const diff = Math.floor((new Date().setHours(0,0,0,0) - new Date(dateStr)) / 86400000);
-    if (diff === streak) streak++; 
+    const diff = Math.floor((new Date().setHours(0, 0, 0, 0) - new Date(dateStr)) / 86400000);
+    if (diff === streak) streak++;
     else break;
   }
   return streak;
@@ -164,7 +166,7 @@ function countThisWeek(history) {
 }
 
 function renderWeekGrid(history) {
-  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const grid = document.getElementById('weekGrid');
   grid.innerHTML = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(); d.setDate(d.getDate() - (6 - i));
@@ -190,11 +192,11 @@ function renderHistory(history) {
     return;
   }
   container.innerHTML = history.slice(0, 10).map(h => {
-    const dateStr = new Date(h.date).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+    const dateStr = new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     return `<div class="history-item">
       <div>
         <div class="history-title">${escapeHTML(h.title || 'Unknown Problem')}</div>
-        <div class="history-platforms"> ${escapeHTML((h.platforms||[]).join(', ') || 'unknown')}</div>
+        <div class="history-platforms"> ${escapeHTML((h.platforms || []).join(', ') || 'unknown')}</div>
       </div>
       <div class="history-date">${dateStr}</div>
     </div>`;

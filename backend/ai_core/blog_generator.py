@@ -43,10 +43,6 @@ def generate_blog(problem, credentials: dict | None = None) -> str:
             status_code=503,
             detail="The AI provider is currently unavailable or experiencing high traffic. Please try again later.",
         )
-    if credentials:
-        return manager.generate(prompt, credentials)
-    return manager.generate(prompt)
-
 
 
 def generate_tags(

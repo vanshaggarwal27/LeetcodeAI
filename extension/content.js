@@ -66,6 +66,12 @@
                 document.querySelector('.ant-select-selection-item');
             const language = langElement ? langElement.innerText.trim().toLowerCase() : "unknown";
 
+            const difficultyElement = document.querySelector('[diff]') ||
+                document.querySelector('div[class*="text-difficulty-"]') ||
+                document.querySelector('span[class*="text-difficulty-"]');
+            const difficulty = difficultyElement
+                ? (difficultyElement.getAttribute('diff') || difficultyElement.innerText || "").trim()
+                : null;
             // Extract topic tags (e.g. Array, Dynamic Programming, Hash Table)
             const tagElements = document.querySelectorAll('a[href*="/tag/"]');
             const topics = Array.from(tagElements)

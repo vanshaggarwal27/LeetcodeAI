@@ -229,13 +229,23 @@ def client(app_module):
 
 @pytest.fixture
 def mock_generate_blog(app_module, mocker):
+    def fake_generate(*args, **kwargs):
+        return "# Mock blog content"
     return mocker.patch(
         "main.generate_blog",
-        autospec=True,
-        return_value="# Mock blog content",
+        side_effect=fake_generate,
     )
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
+def mock_generate_tags(app_module, mocker):
+    def fake_tags(*args, **kwargs):
+        return ["python", "leetcode"]
+    return mocker.patch(
+        "main.generate_tags",
+        side_effect=fake_tags,
+    )
+
+@pytest.fixture(autouse=True)
 def mock_rate_code_efficiency(app_module, mocker):
     return mocker.patch(
         "main.rate_code_efficiency",
