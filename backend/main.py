@@ -478,7 +478,7 @@ async def create_blog(
     if existing_record:
         return {
             "status": "error",
-            "message": f"Solution for '{problem.title}' has already been published!",
+            "message": f"Solution for '{problem.title}' has already been published! Keep up the great streak!",
         }
 
     if problem.custom_prompt and len(problem.custom_prompt.strip()) > 1000:
@@ -490,8 +490,10 @@ async def create_blog(
     if not problem.code or problem.code.strip() == "":
         return {"status": "error", "message": "Code is empty, cannot generate blog."}
 
-    user_settings = await _settings_for_user(user_id)
+    user_settings = await _settings_for_user(user_id) if user_id else {}
 
+    # --- Atomic Lock to prevent Race Conditions ---
+    lock_id = f"generate_blog_{problem.title}_{problem.author}_{user_email}"
     try:
         blog_content = await run_in_threadpool(generate_blog, problem, credentials=user_settings)
         efficiency = rate_code_efficiency(
@@ -516,58 +518,83 @@ async def create_blog(
         pass
 
     try:
-        platform_results = await publish_to_platforms(
-            problem.title,
-            blog_content,
-            platforms=problem.platforms or user_settings.get("publish_platforms"),
-            published=not problem.publish_as_draft,
-            tags=problem.tags,
-            credentials=devto_creds,  # Using user specific keys
-        )
-        successful = [r for r in platform_results if r.get("status") == "success"]
-        overall_status = (
-            "success"
-            if len(successful) == len(platform_results)
-            else "partial_success" if successful else "error"
-        )
-    except Exception as e:
-        return {"status": "error", "message": f"Publishing failure: {str(e)}"}
+        try:
+            blog_content = await run_in_threadpool(generate_blog, problem, credentials=user_settings)
+            efficiency = rate_code_efficiency(
+                problem.title,
+                problem.code,
+                problem.language or "python"
+            )
+        except Exception as e:
+            return {"status": "error", "message": f"AI provider failure: {str(e)}"}
 
-    try:
-        record = PublishRecord(
-            title=problem.title,
-            date=datetime.now(timezone.utc).isoformat(),
-            platforms=[r["platform"] for r in successful],
-            status=overall_status,
-            author=problem.author,
-            user_email=user_email,
-        )
+        # Resolve platform-specific credentials from database securely at runtime
+        devto_creds = await resolve_user_credentials(db, user_id, "devto") if user_id else {}
 
-        await db.problem_info.update_one(
-            {"title": problem.title, "author": problem.author, "user_email": user_email},
-            {"$set": record.model_dump()},
-            upsert=True,
-        )
+        try:
+            platform_results = await publish_to_platforms(
+                problem.title,
+                blog_content,
+                platforms=problem.platforms or user_settings.get("publish_platforms"),
+                published=not problem.publish_as_draft,
+                tags=problem.tags,
+                credentials=devto_creds,  # Using user specific keys
+            )
+            successful = [r for r in platform_results if r.get("status") == "success"]
+            overall_status = (
+                "success"
+                if len(successful) == len(platform_results)
+                else "partial_success" if successful else "error"
+            )
+        except Exception as e:
+            return {"status": "error", "message": f"Publishing failure: {str(e)}"}
 
-    except Exception as e:
-        print(f"Database logging failed: {e}")
+        try:
+            record = PublishRecord(
+                title=problem.title,
+                date=datetime.now(timezone.utc).isoformat(),
+                platforms=[r["platform"] for r in successful],
+                status=overall_status,
+                author=problem.author,
+                user_email=user_email,
+            )
 
-    social_results = []
-    if problem.share_to_social and successful:
-        post_url = next((res["url"] for res in successful if res.get("url")), None)
+            await db.problem_info.update_one(
+                {"title": problem.title, "author": problem.author, "user_email": user_email},
+                {"$set": record.model_dump()},
+                upsert=True,
+            )
 
-        if post_url:
-            try:
-                # Dynamically fetch encrypted LinkedIn credentials
-                linkedin_creds = await resolve_user_credentials(db, user_id, "linkedin")
-                social_results = share_to_platforms(
-                    title=problem.title,
-                    post_url=post_url,
-                    tags=problem.tags,
-                    credentials=linkedin_creds,  # Decrypted user scope profile object
-                )
-            except Exception as e:
-                print(f"Social sharing failed: {e}")
+        except Exception as e:
+            print(f"Database logging failed: {e}")
+
+        social_results = []
+        if problem.share_to_social and successful:
+            post_url = next((res["url"] for res in successful if res.get("url")), None)
+
+            if post_url:
+                try:
+                    # Dynamically fetch encrypted LinkedIn credentials
+                    linkedin_creds = await resolve_user_credentials(db, user_id, "linkedin")
+                    social_results = share_to_platforms(
+                        title=problem.title,
+                        post_url=post_url,
+                        tags=problem.tags,
+                        credentials=linkedin_creds,  # Decrypted user scope profile object
+                    )
+                except Exception as e:
+                    print(f"Social sharing failed: {e}")
+        return {
+            "status": overall_status,
+            "data": {
+                "blog_content": blog_content,"efficiency": efficiency,
+                "platforms": platform_results,
+                "social": social_results,
+            },
+        }
+    finally:
+        # Release the lock so future attempts can proceed if this failed
+        await db.locks.delete_one({"_id": lock_id})
 
     # GitHub automatic commit integration
     if successful and user_settings.get("github_access_token") and user_settings.get("github_repo_name"):
@@ -617,8 +644,8 @@ async def publish_blog(
     user_email = require_user(x_user_email)
     user_id = current_user["id"] if current_user else "anonymous"
 
-    user_settings = await _settings_for_user(user_id)
-    devto_creds = await resolve_user_credentials(db, user_id, "devto")
+    user_settings = await _settings_for_user(user_id) if user_id else {}
+    devto_creds = await resolve_user_credentials(db, user_id, "devto") if user_id else {}
 
     try:
         platform_results = await publish_to_platforms(
