@@ -28,6 +28,8 @@ from twilio.rest import Client
 from ai import rate_code_efficiency
 
 # --- UPDATED AI PATH ---
+from ai_core.blog_generator import generate_blog
+from ai import generate_hint
 from ai_core.blog_generator import generate_blog, generate_tags
 from devto import publish_to_platforms
 from github_integration import push_solution_to_github
@@ -456,6 +458,12 @@ def health_check():
 # -----------------------------
 # Blog Generator Endpoint
 # -----------------------------
+class HintRequest(BaseModel):
+    title: str
+    description: str
+    difficulty: str = "Unknown"
+    hint_level: int
+
 @app.post("/generate-blog")
 @limiter.limit("15/hour")
 async def create_blog(
@@ -680,6 +688,29 @@ async def publish_blog(
             "social": social_results,
         },
     }
+@app.post("/generate-hint")
+async def generate_hint_api(request: HintRequest):
+
+    try:
+
+        hint = generate_hint(
+            request.title,
+            request.description,
+            request.difficulty,
+            request.hint_level
+        )
+
+        return {
+            "status": "success",
+            "hint": hint
+        }
+
+    except Exception as e:
+
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 
 # -----------------------------

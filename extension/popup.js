@@ -647,4 +647,75 @@ const copyBtn = document.getElementById('copyBtn');
 if (copyBtn) {
     copyBtn.addEventListener('click', copyBlogToClipboard);
 }
+
+async function requestHint(level) {
+
+    const tabs = await chrome.tabs.query({
+        active: true,
+        currentWindow: true
+    });
+
+    const tab = tabs[0];
+
+    chrome.scripting.executeScript(
+        {
+            target: { tabId: tab.id },
+            func: () => {
+
+                const titleElement =
+                    document.querySelector('div[data-cy="question-title"]') ||
+                    document.querySelector('.text-title-large');
+
+                const descriptionElement =
+                    document.querySelector('.elfjS') ||
+                    document.querySelector('[data-track-load="description_content"]');
+
+                return {
+                    title: titleElement ? titleElement.innerText : "",
+                    description: descriptionElement ? descriptionElement.innerText : "",
+                    difficulty: "Unknown"
+                };
+            }
+        },
+        (results) => {
+
+            const problem = results[0].result;
+
+            chrome.runtime.sendMessage({
+                type: "GENERATE_HINT",
+                payload: {
+                    ...problem,
+                    hint_level: level
+                }
+            });
+
+        }
+    );
+}
+
+document.getElementById("hint1Btn")?.addEventListener("click", () => requestHint(1));
+
+document.getElementById("hint2Btn")?.addEventListener("click", () => requestHint(2));
+
+document.getElementById("hint3Btn")?.addEventListener("click", () => requestHint(3));
+
+document.getElementById("hint4Btn")?.addEventListener("click", () => requestHint(4));
+
+document.getElementById("solutionBtn")?.addEventListener("click", () => requestHint(5));
+
+chrome.runtime.onMessage.addListener((request) => {
+
+    if (request.type === "HINT_READY") {
+
+        const hintBox = document.getElementById("hintOutput");
+
+        if (hintBox) {
+            hintBox.value = request.hint;
+        }
+
+    }
+
+});
+
+// =================================================
 // =================================================
