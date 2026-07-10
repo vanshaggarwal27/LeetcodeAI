@@ -64,8 +64,12 @@ async def _load_user(user_id: str) -> dict | None:
 async def _has_published_today(user: dict, now_utc: datetime) -> bool:
     user_zone = safe_zoneinfo(user.get("timezone"))
     local_today = now_utc.astimezone(user_zone).date()
-    start_utc = datetime.combine(local_today, time.min, user_zone).astimezone(timezone.utc)
-    end_utc = datetime.combine(local_today, time.max, user_zone).astimezone(timezone.utc)
+    start_utc = datetime.combine(local_today, time.min, user_zone).astimezone(
+        timezone.utc
+    )
+    end_utc = datetime.combine(local_today, time.max, user_zone).astimezone(
+        timezone.utc
+    )
 
     query = {
         "date": {
@@ -129,7 +133,9 @@ async def _send_alert(user: dict) -> None:
 
         try:
             audio_file = await asyncio.to_thread(generate_audio, message)
-            backend_url = os.getenv("BACKEND_URL", "https://leetcodeai-backend.onrender.com")
+            backend_url = os.getenv(
+                "BACKEND_URL", "https://leetcodeai-backend.onrender.com"
+            )
             audio_url = f"{backend_url.rstrip('/')}/{audio_file}"
             await asyncio.to_thread(make_call, phone, audio_url=audio_url)
         except Exception:
@@ -221,22 +227,11 @@ async def enqueue_due_reminders(now_utc: datetime | None = None) -> dict:
             skipped += 1
             continue
 
-        await db.reminder_jobs.update_one(
-            {"key": queue_key},
-            {
-                "$set": {
-                    "key": queue_key,
-                    "user_id": user_id,
-                    "queued_at": now_utc.isoformat(),
-                    "timezone": user.get("timezone", DEFAULT_TIMEZONE),
-                }
-            },
-            upsert=True,
-        )
+        await db.reminder_jobs.insert_one({"key": queue_key, "queued_at": now_utc.isoformat()})
         check_user_progress_and_alert_task.delay(user_id)
         queued += 1
 
-    return {"queued": queued, "skipped": skipped, "due_users": len(due_users)}
+    return {"queued": queued, "skipped": skipped}
 
 def check_unsolved_users() -> dict:
     return asyncio.run(enqueue_due_reminders())

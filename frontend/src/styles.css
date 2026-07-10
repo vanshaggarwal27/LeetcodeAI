@@ -388,3 +388,24 @@ select:focus {
     grid-template-columns: 1fr;
   }
 }
+.complexity-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.complexity-badge.low {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.complexity-badge.medium {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.complexity-badge.high {
+  background: #fee2e2;
+  color: #991b1b;
+}

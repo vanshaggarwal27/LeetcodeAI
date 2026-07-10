@@ -24,7 +24,7 @@ class TestHealthRoutes:
 
 class TestGenerateBlogRoute:
     def test_happy_path_returns_success(
-        self, client, mock_generate_blog, mock_post_to_platform
+    self, client, mock_generate_blog, mock_post_to_platform, mock_rate_code_efficiency
     ):
         """Both Gemini and Dev.to succeed  expect success body."""
         payload = {
@@ -141,9 +141,7 @@ class TestGenerateBlogRoute:
         assert body["status"] == "error"
         assert body["status"] == "error"
 
-    def test_generate_blog_called_with_problem(
-        self, client, mock_generate_blog, mock_post_to_platform
-    ):
+    def test_generate_blog_called_with_problem(self, client, mock_generate_blog, mock_post_to_platform, mock_rate_code_efficiency):
         """Verify generate_blog is actually called once."""
         payload = {
             "title": "Two Sum",
@@ -169,9 +167,7 @@ class TestGenerateBlogRoute:
         problem = mock_generate_blog.call_args.args[0]
         assert problem.difficulty == "Easy"
 
-    def test_post_to_platform_receives_title(
-        self, client, mock_generate_blog, mock_post_to_platform
-    ):
+    def test_post_to_platform_receives_title(self, client, mock_generate_blog, mock_post_to_platform, mock_rate_code_efficiency):
         """Verify post_to_platform is called with the correct title."""
         payload = {
             "title": "Two Sum",
@@ -186,6 +182,65 @@ class TestGenerateBlogRoute:
             headers=TEST_HEADERS,
         )
         mock_post_to_platform.assert_called_once()
+
+    def test_pymongo_error_handling(self, client, mock_db):
+        """When a MongoDB error is raised, route returns 503 error."""
+        from pymongo.errors import PyMongoError
+
+        # Mock find_one to raise PyMongoError
+        mock_db.problem_info.find_one.side_effect = PyMongoError("Connection timed out")
+
+        payload = {
+            "title": "Two Sum",
+            "description": "Given an array...",
+            "code": "def twoSum(): pass",
+            "author": "testuser",
+        }
+        response = client.post("/generate-blog", json=payload, headers=TEST_HEADERS)
+
+        # Should return 503 Service Unavailable
+        assert response.status_code == 503
+
+        body = response.json()
+        assert body["status"] == "error"
+        assert "Database connection failed" in body["message"]
+
+
+class TestPublishBlogRoute:
+    def test_happy_path_returns_success(self, client, mock_generate_blog, mock_post_to_platform, mock_rate_code_efficiency):
+        """Publishing edited blog succeeds and returns success body."""
+        payload = {
+            "title": "Two Sum",
+            "content": "# Solved Two Sum!",
+            "author": "testuser",
+            "platforms": ["devto"],
+            "publish_as_draft": False,
+        }
+        response = client.post(
+            "/publish-blog",
+            json=payload,
+            headers=TEST_HEADERS,
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "success"
+        assert body["data"]["platforms"][0]["status"] == "success"
+        assert "dev.to" in body["data"]["platforms"][0]["url"]
+        mock_post_to_platform.assert_called_once()
+
+    def test_missing_required_fields_returns_422(self, client):
+        """Pydantic rejects publish-blog payloads missing required fields."""
+        payload = {
+            "title": "Two Sum",
+            # content is missing
+        }
+
+        response = client.post(
+            "/publish-blog",
+            json=payload,
+            headers=TEST_HEADERS,
+        )
+        assert response.status_code == 422
 
 
 class TestReminderRoutes:

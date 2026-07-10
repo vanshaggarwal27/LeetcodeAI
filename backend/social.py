@@ -57,9 +57,15 @@ class TwitterSharer(BaseSocialSharer):
     ) -> SocialResult:
         credentials = credentials or {}
         api_key = credentials.get("twitter_api_key") or os.getenv("TWITTER_API_KEY")
-        api_secret = credentials.get("twitter_api_secret") or os.getenv("TWITTER_API_SECRET")
-        access_token = credentials.get("twitter_access_token") or os.getenv("TWITTER_ACCESS_TOKEN")
-        access_secret = credentials.get("twitter_access_secret") or os.getenv("TWITTER_ACCESS_SECRET")
+        api_secret = credentials.get("twitter_api_secret") or os.getenv(
+            "TWITTER_API_SECRET"
+        )
+        access_token = credentials.get("twitter_access_token") or os.getenv(
+            "TWITTER_ACCESS_TOKEN"
+        )
+        access_secret = credentials.get("twitter_access_secret") or os.getenv(
+            "TWITTER_ACCESS_SECRET"
+        )
 
         if not all([api_key, api_secret, access_token, access_secret]):
             raise SocialSharerError("Twitter API credentials missing in environment.")
@@ -100,13 +106,15 @@ class LinkedInSharer(BaseSocialSharer):
         tags: list[str],
         credentials: dict[str, Any] | None = None,
     ) -> SocialResult:
+
         credentials = credentials or {}
-        access_token = credentials.get("linkedin_access_token") or os.getenv("LINKEDIN_ACCESS_TOKEN")
-        person_urn = credentials.get("linkedin_person_urn") or os.getenv("LINKEDIN_PERSON_URN") # e.g., urn:li:person:123456789
+        # Support both standard key shapes transparently
+        access_token = credentials.get("access_token") or credentials.get("linkedin_access_token") or os.getenv("LINKEDIN_ACCESS_TOKEN")
+        person_urn = credentials.get("person_urn") or credentials.get("linkedin_person_urn") or os.getenv("LINKEDIN_PERSON_URN")
 
         if not access_token or not person_urn:
             raise SocialSharerError(
-                "LinkedIn API credentials (token or URN) missing in environment."
+                "LinkedIn authorization tokens or Member identity parameters are unassigned."
             )
 
         hashtags = " ".join([f"#{t.replace(' ', '')}" for t in tags[:3]])
@@ -149,15 +157,11 @@ class LinkedInSharer(BaseSocialSharer):
             if response.status_code in (200, 201):
                 data = response.json()
                 post_id = data.get("id")
-                linkedin_url = (
-                    f"https://www.linkedin.com/feed/update/{post_id}"
-                    if post_id
-                    else None
-                )
+
                 return SocialResult(
                     platform=self.platform,
                     status="success",
-                    url=linkedin_url,
+                    url=f"https://www.linkedin.com/feed/update/{post_id}" if post_id else None,
                     response=data,
                 )
             else:
@@ -165,13 +169,14 @@ class LinkedInSharer(BaseSocialSharer):
                     f"LinkedIn API Error {response.status_code}: {response.text}"
                 )
         except requests.RequestException as e:
-            raise SocialSharerError(f"LinkedIn network error: {str(e)}")
+            raise SocialSharerError(f"LinkedIn communication pipeline failure: {str(e)}")
 
 
 SHARERS: dict[str, BaseSocialSharer] = {
     "twitter": TwitterSharer(),
     "linkedin": LinkedInSharer(),
 }
+
 
 def share_to_platforms(
     title: str,

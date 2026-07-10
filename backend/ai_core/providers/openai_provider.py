@@ -1,8 +1,10 @@
+import asyncio
 import logging
 import os
 
 import openai
 from dotenv import load_dotenv
+from fastapi import HTTPException
 from openai import OpenAI
 
 from .base import AIProvider
@@ -20,7 +22,6 @@ SDK_MAX_RETRIES = 0
 
 
 class OpenAIProvider(AIProvider):
-
     def __init__(self, api_key: str | None = None):
         api_key = api_key or os.getenv("OPENAI_API_KEY")
 
@@ -36,17 +37,19 @@ class OpenAIProvider(AIProvider):
         self.models = tuple(
             dict.fromkeys(model for model in (preferred_model, fallback_model) if model)
         )
+        # Authentic production client configuration
         self.client = OpenAI(
             api_key=api_key,
             max_retries=SDK_MAX_RETRIES,
             timeout=REQUEST_TIMEOUT_SECONDS,
         )
+        # Safely bind the concurrency lock to the provider instance context
+        self._lock = asyncio.Lock()
 
     @staticmethod
     def clean_response(text: str) -> str:
         """Remove an accidental outer Markdown wrapper without harming code fences."""
         text = text.strip()
-
         for opening_fence in ("```markdown", "```"):
             for line_break in ("\r\n", "\n"):
                 prefix = f"{opening_fence}{line_break}"
@@ -121,3 +124,51 @@ class OpenAIProvider(AIProvider):
             last_error = Exception(f"Empty response from {model_name}")
 
         raise last_error or Exception("All configured OpenAI models failed")
+
+    async def generate_blog(self, payload: dict):
+        if self._lock.locked():
+            raise HTTPException(
+                status_code=429,
+                detail="A blog generation request is already in progress. Please wait."
+            )
+
+        async with self._lock:
+            user_prompt = payload.get(
+                "prompt",
+                "Write a technical blog post about solving LeetCode problems efficiently.",
+            )
+            model_name = payload.get("model", "gpt-4o")
+
+            try:
+                # Run the synchronous OpenAI SDK call inside a thread pool
+                # to keep the FastAPI async event loop completely non-blocking
+                loop = asyncio.get_event_loop()
+                response = await loop.run_in_executor(
+                    None,
+                    lambda: self.client.chat.completions.create(
+                        model=model_name,
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": (
+                                    "You are LeetLog AI, an expert technical writer and "
+                                    "software engineer. Generate a structured, markdown-formatted "
+                                    "blog post based on the problem description provided."
+                                ),
+                            },
+                            {"role": "user", "content": user_prompt},
+                        ],
+                        temperature=0.7,
+                    )
+                )
+
+                return {
+                    "status": "success",
+                    "message": "Blog created successfully",
+                    "data": response.choices[0].message.content,
+                }
+
+            except openai.OpenAIError as e:
+                raise HTTPException(status_code=502, detail=f"OpenAI service error: {str(e)}")
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Unexpected internal error: {str(e)}")
