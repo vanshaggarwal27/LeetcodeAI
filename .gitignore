@@ -33,3 +33,10 @@ node_modules/
 .idea/
 .vscode/
 
+# --- Scratch Scripts ---
+backend/fetch_jobs.py
+script.js
+jobs.json
+
+# --- Generated Audio ---
+backend/static/reminder_*.mp3

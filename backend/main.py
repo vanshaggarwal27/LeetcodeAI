@@ -495,30 +495,6 @@ async def create_blog(
     # --- Atomic Lock to prevent Race Conditions ---
     lock_id = f"generate_blog_{problem.title}_{problem.author}_{user_email}"
     try:
-        blog_content = await run_in_threadpool(generate_blog, problem, credentials=user_settings)
-        efficiency = await run_in_threadpool(
-            rate_code_efficiency,
-            problem.title,
-            problem.code,
-            problem.language or "python"
-        )
-    except Exception as e:
-        return {"status": "error", "message": f"AI provider failure: {str(e)}"}
-
-    # Resolve platform-specific credentials from database securely at runtime
-    devto_creds = await resolve_user_credentials(db, user_id, "devto")
-
-    try:
-        _ = await run_in_threadpool(
-            generate_tags,
-            problem,
-            blog_content,
-            credentials=user_settings,
-        )
-    except Exception:
-        pass
-
-    try:
         try:
             blog_content = await run_in_threadpool(generate_blog, problem, credentials=user_settings)
             efficiency = await run_in_threadpool(
