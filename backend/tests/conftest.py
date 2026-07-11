@@ -51,6 +51,7 @@ class FakeCollection:
         self.find_one = AsyncMock(side_effect=self._find_one)
         self.count_documents = AsyncMock(side_effect=self._count_documents)
         self.delete_many = AsyncMock(side_effect=self._delete_many)
+        self.delete_one = AsyncMock(side_effect=self._delete_one)
 
     async def _find_one(self, query, *args, **kwargs):
         for record in self.records:
@@ -111,6 +112,13 @@ class FakeCollection:
         self.records = [r for r in self.records if not self._matches(r, query)]
         return Mock(deleted_count=initial_count - len(self.records))
 
+    async def _delete_one(self, query, *args, **kwargs):
+        for i, r in enumerate(self.records):
+            if self._matches(r, query):
+                del self.records[i]
+                return Mock(deleted_count=1)
+        return Mock(deleted_count=0)
+
     def find(self, *args, **kwargs):
         query = args[0] if args else {}
         return FakeCursor(
@@ -153,6 +161,7 @@ class FakeDatabase:
         self.integration_settings = FakeCollection()
         self.reminder_jobs = FakeCollection()
         self.reminder_alerts = FakeCollection()
+        self.locks = FakeCollection()
 
 
 class FakeMotorClient:
@@ -227,14 +236,7 @@ def mock_generate_blog(app_module, mocker):
         side_effect=fake_generate,
     )
 
-@pytest.fixture(autouse=True)
-def mock_generate_tags(app_module, mocker):
-    def fake_tags(*args, **kwargs):
-        return ["python", "leetcode"]
-    return mocker.patch(
-        "main.generate_tags",
-        side_effect=fake_tags,
-    )
+
 
 @pytest.fixture(autouse=True)
 def mock_rate_code_efficiency(app_module, mocker):
