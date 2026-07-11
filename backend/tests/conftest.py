@@ -236,14 +236,7 @@ def mock_generate_blog(app_module, mocker):
         side_effect=fake_generate,
     )
 
-@pytest.fixture(autouse=True)
-def mock_generate_tags(app_module, mocker):
-    def fake_tags(*args, **kwargs):
-        return ["python", "leetcode"]
-    return mocker.patch(
-        "main.generate_tags",
-        side_effect=fake_tags,
-    )
+
 
 @pytest.fixture(autouse=True)
 def mock_rate_code_efficiency(app_module, mocker):
