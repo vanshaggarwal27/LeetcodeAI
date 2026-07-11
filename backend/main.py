@@ -496,7 +496,8 @@ async def create_blog(
     lock_id = f"generate_blog_{problem.title}_{problem.author}_{user_email}"
     try:
         blog_content = await run_in_threadpool(generate_blog, problem, credentials=user_settings)
-        efficiency = rate_code_efficiency(
+        efficiency = await run_in_threadpool(
+            rate_code_efficiency,
             problem.title,
             problem.code,
             problem.language or "python"
@@ -520,7 +521,8 @@ async def create_blog(
     try:
         try:
             blog_content = await run_in_threadpool(generate_blog, problem, credentials=user_settings)
-            efficiency = rate_code_efficiency(
+            efficiency = await run_in_threadpool(
+                rate_code_efficiency,
                 problem.title,
                 problem.code,
                 problem.language or "python"
