@@ -44,7 +44,7 @@ export default function StatsDashboard({ token, api }) {
   const last5Years = Array.from({length: 5}, (_, i) => (currentYear - i).toString());
   
   const dataYears = stats.daily_activity?.length > 0 
-    ? stats.daily_activity.map(item => item.date.split('-')[0])
+    ? stats.(daily_activity ?? []).map(item => item.date.split('-')[0])
     : [];
 
   const availableYears = [...new Set([...last5Years, ...dataYears])].sort().reverse();
