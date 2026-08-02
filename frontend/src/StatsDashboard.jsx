@@ -44,14 +44,14 @@ export default function StatsDashboard({ token, api }) {
   const last5Years = Array.from({length: 5}, (_, i) => (currentYear - i).toString());
   
   const dataYears = stats.daily_activity?.length > 0 
-    ? stats.daily_activity.map(item => item.date.split('-')[0])
+    ? stats.(daily_activity ?? []).map(item => item.date.split('-')[0])
     : [];
 
   const availableYears = [...new Set([...last5Years, ...dataYears])].sort().reverse();
 
   const generateYearData = (yearStr) => {
     const days = [];
-    const year = parseInt(yearStr);
+    const year = parseInt(yearStr, 10);
     const todayStr = new Date().toISOString().split('T')[0];
     
     for (let month = 0; month < 12; month++) {
