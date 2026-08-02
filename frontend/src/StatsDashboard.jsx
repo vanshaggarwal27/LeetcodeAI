@@ -51,7 +51,7 @@ export default function StatsDashboard({ token, api }) {
 
   const generateYearData = (yearStr) => {
     const days = [];
-    const year = parseInt(yearStr);
+    const year = parseInt(yearStr, 10);
     const todayStr = new Date().toISOString().split('T')[0];
     
     for (let month = 0; month < 12; month++) {
