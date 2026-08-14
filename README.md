@@ -140,7 +140,7 @@ The server will start at `http://localhost:10000`.
 
 ---
 
-### Summerize Project Architecture for beginners
+### Summarize Project Architecture for beginners
 
 ```text
 LeetCode Problem
